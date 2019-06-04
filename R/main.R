@@ -18,16 +18,21 @@ param<-
 
 #NOTE: These should give you DFs
 
-vcfs.filepaths<-c()
+vcfs.filepaths<-c("")
+
 get.rv_tdt.results(vcfs.filepaths, param)
 
 #TODO:  this could be abstracted
 # Avoid for loops :/
 
 for (i in vcfs){
-filepath.vcfs<-vcfs[I]
+filepath.vcf<-vcfs[i]
+vcf<-readVcf(filepath.vcf)
+        geno<-trio::vcf2geno(vcf)
+        rm(vcf)
+        
 filepath.rv_tdt.results<-
-rv_tdt.results<-get.rv_tdt.results(filepath.vcf)
+rv_tdt.results<-RV_TDT(geno)
 write.table(rv_tdt.results, filepath.rv_tdt.results)
 }
 

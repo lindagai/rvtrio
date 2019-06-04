@@ -17,16 +17,10 @@
 
 ########################################################
 
-RV_TDT<-function(filepath.vcf, filepath.ped, window.size=25, window.type = "M", param){
+RV_TDT<-function(geno, ped, window.size=25, window.type = "M", param){
 
-        vcf<-readVcf(filepath.vcf)
-        geno<-VariantAnnotation::geno(vcf)
-        rm(vcf)
-
-        ped<-read.table(filepath.ped)
         tped<-.getTPED(geno)
         map<-.getMAP(tped)
-
         results<-.runRV_TDT(window.size, window.type, ped, map, tped)
 
 }
@@ -38,20 +32,17 @@ RV_TDT<-function(filepath.vcf, filepath.ped, window.size=25, window.type = "M", 
 ########################################################
 
 .getTPED<-function(geno){
-	#TODO: Fix this
-	
-	    #RV TDT tped columns:
-        # 1) SNP/variant id
-        # 2-n) genotype on every individual (for the rest of the columns)
-        
-        vcf.geno.bool<-apply(vcf.geno, 1, function(x) paste(gsub("\\/", "\t", x), collapse="\t"))
-        toWrite<-paste(rownames(vcf.geno), vcf.geno.bool, sep=" ")
-        writeLines(toWrite, filepath.tped)
+       
+        tped<-t(geno)
         return(tped)
 
 }
 
 ############################
+
+#1. gene 
+#2. variant id. The variant id must matches with the variant id in tped file
+#3. maf
 
 .getMAP<-function(tped){
 	
@@ -59,8 +50,8 @@ RV_TDT<-function(filepath.vcf, filepath.ped, window.size=25, window.type = "M", 
 		gene.id<-"NA"
         n.snps<-nrow(tped)
         gene.id.vec<-rep(gene.id,n.snps)
-        snps<-tped[,1]
-        mafs<-rowMeans(tped[,-1])
+        snps<-rownames(tped)
+        mafs<-rowMeans(tped)
         map<-cbind(gene.id.vec,snps,mafs)
         return(map)
         
@@ -68,37 +59,34 @@ RV_TDT<-function(filepath.vcf, filepath.ped, window.size=25, window.type = "M", 
 
 ############################
 
-.runRV_TDT<-function(window.size,window.type, ped, map, tped){
+.runRV_TDT<-function(ped, map, tped, window.size=0,window.type  = "M"){
 
         #return rv_tdt results as df
-
-        if (window.size = NULL){
+        if (window.size==0){
                 n.windows<-1
+                window.size<-nrow(map)
         } else {
-                n.snps<- nrow(map)
-                n.windows<- n.snps - window.size + 1
+                n.windows<- max(n.snps - window.size + 1,1)
         }
 
-        results.df<-as.data.frame(matrix(nrow=n.windows, n.col = 8))
-        colnames(results)<-c(
+        results.df<-as.data.frame(matrix(data=NA,nrow=n.windows, ncol=8))
+        colnames(results.df)<-c(
                 "X.gene",
                 "CMC.Analytical","BRV.Haplo","CMC.Haplo","VT.BRV.Haplo","VT.CMC.Haplo","WSS.Haplo",
                 "mid.window.pos"
         )
 
-        #TODO: Get rid of for loop
+        #TODO: Get rid of for loop and use a list instead
+        #Make this into a function, and use apply instead?
+        #Indexing is very slow for data frames
 
-        for i in (1:n.windows){
- 
-                start.index<-(i-1)*window.size-(i-1)*overlap+1
-                end.index<-min(i*window.size-(i-1)*overlap,n.snps)
-                mid.position<- floor(start.index + (end.index - start.index)/2)
-        
-                input.filepaths<-.getInputFilesForWindow(map,ped,tped)
-                curr.window.result<-.runRV_TDTOnWindow(input.filepaths,param)
-                results[i,]<-c(curr.window.result, mid.position)
-                
+        for (i in (1:n.windows)){
+                input.filepaths<-.getInputFilesForWindow(ped, map, tped, window.type, window.size,i)
+                print(paste0(i, "-",input.filepaths))
+                #curr.window.result<-.runRV_TDTOnWindow(input.filepaths,param)
+                #results[i,]<-c(curr.window.result, mid.position)
         }
+
 
         return(results.df)
 
@@ -110,17 +98,25 @@ RV_TDT<-function(filepath.vcf, filepath.ped, window.size=25, window.type = "M", 
 
 ########################################################
 
-.getInputFilesForWindow<-function(window.size, ped, map, tped, i){
-	
-		#TODO: fix this to get the directory functions.R is in
-		data.dir <-getwd()
+.getInputFilesForWindow<-function(ped, map, tped, window.type, window.size, i){
 
-        file.param<-paste0("window",i,".",
+        n.snps<- nrow(map)
+
+        start.index<-i
+        end.index<-min(i+window.size-1,n.snps)
+        mid.position<- floor(start.index + (end.index - start.index)/2)
+
+        #TODO: fix this to get the directory functions.R is in
+        data.dir <-getwd()
+
+        file.param<-paste0("/R/window",i,".",
                            start.index,"-",end.index,window.type)
+        file.param
 
         filepath.map.new<-paste0(data.dir,file.param,".map")
         filepath.tped.new<-paste0(data.dir,file.param,".tped")
-        filepath.tped.new
+        filepath.ped<-paste0(data.dir,"/R/pedfile.ped")
+        filepath.ped
 
         sm.map<-map[start.index:end.index,]
         sm.tped<-tped[start.index:end.index,]
@@ -128,7 +124,11 @@ RV_TDT<-function(filepath.vcf, filepath.ped, window.size=25, window.type = "M", 
         write.table(sm.map,filepath.map.new, sep="\t",col.names=FALSE,row.names = FALSE,quote = FALSE)
         write.table(sm.tped,filepath.tped.new, sep="\t",col.names=FALSE,row.names = FALSE,quote = FALSE)
 
-        filepaths<-c(filepath.tped.new, ped, filepath.map.new)
+        if (i==1){
+                write.table(ped,filepath.ped, sep="\t",col.names=TRUE,row.names = FALSE,quote = FALSE)
+        }
+
+        filepaths<-c(filepath.tped.new, filepath.ped, filepath.map.new)
 
 }
 
@@ -184,8 +184,8 @@ RV_TDT<-function(filepath.vcf, filepath.ped, window.size=25, window.type = "M", 
 
 	filepath<-paste0(rv.tdt.results.dir,file.param)
 	result<-read.table(filepath)
-
 	return(result)
+	
 }
 
 ############################
