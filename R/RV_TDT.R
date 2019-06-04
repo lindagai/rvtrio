@@ -17,9 +17,16 @@
 
 ########################################################
 
-RV_TDT<-function(geno, ped, window.size=25, window.type = "M", param){
-
-        tped<-.getTPED(geno)
+RV_TDT<-function(plink.ped, window.size=25, window.type = "M", param){
+	
+	#Check to see if RV_TDT has been installed
+	#TODO: Is there any way to install other software automatically?
+	#Install RV_TDT if it has not already been installed
+	# if (!.checkRV_TDT()){
+	# 	.installRV_TDT()
+	# }
+		ped <-plink.ped[,1:6]
+        tped<-.getTPED(plink.ped)
         map<-.getMAP(tped)
         results<-.runRV_TDT(window.size, window.type, ped, map, tped)
 
@@ -31,9 +38,38 @@ RV_TDT<-function(geno, ped, window.size=25, window.type = "M", param){
 
 ########################################################
 
-.getTPED<-function(geno){
+.checkRV_TDT()<-function(){
+	#TODO: Fix this
+	wd<-getwd()
+	filepath.RV_TDT<-file.path(wd,"RV-TDT")
+	f<-file.path(wd,"RV-TDT")
+	file.exists(f)
+}
+
+########################################################
+
+.installRV_TDT<-function(){
+	
+		# cd "/Users/lindagai 1/Documents/classes/4th year/Research/rvtrio/rv-tdt-master"	
+	
+	#TODO: Fix this
+	wd<-getwd()
+	filepath.RV_TDT<-file.path(wd,"rv-tdt-master")
+	
+	dl.RV_TDT<-paste0("wget -O ",filepath.RV_TDT,)
+	system(dl.RV_TDT)
+	
+	make.rvTDT<-"make rvTDT"
+	system(make.rvTDT)
+
+# remove rvTDT zip file
+}
+
+########################################################
+
+.getTPED<-function(plink.ped){
        
-        tped<-t(geno)
+        tped<-t(plink.ped[,7:ncol(plink.ped)])
         return(tped)
 
 }
@@ -46,7 +82,7 @@ RV_TDT<-function(geno, ped, window.size=25, window.type = "M", param){
 
 .getMAP<-function(tped){
 	
-		#TODO: fix this
+		#TODO: fix the gene.id variable -- can it be extracted from the VCF?
 		gene.id<-"NA"
         n.snps<-nrow(tped)
         gene.id.vec<-rep(gene.id,n.snps)
@@ -83,7 +119,7 @@ RV_TDT<-function(geno, ped, window.size=25, window.type = "M", param){
         for (i in (1:n.windows)){
                 input.filepaths<-.getInputFilesForWindow(ped, map, tped, window.type, window.size,i)
                 print(paste0(i, "-",input.filepaths))
-                #curr.window.result<-.runRV_TDTOnWindow(input.filepaths,param)
+                curr.window.result<-.runRV_TDTOnWindow(input.filepaths,param)
                 #results[i,]<-c(curr.window.result, mid.position)
         }
 
@@ -121,11 +157,11 @@ RV_TDT<-function(geno, ped, window.size=25, window.type = "M", param){
         sm.map<-map[start.index:end.index,]
         sm.tped<-tped[start.index:end.index,]
 
-        write.table(sm.map,filepath.map.new, sep="\t",col.names=FALSE,row.names = FALSE,quote = FALSE)
-        write.table(sm.tped,filepath.tped.new, sep="\t",col.names=FALSE,row.names = FALSE,quote = FALSE)
+        write.table(sm.map,filepath.map.new, sep=" ",col.names=FALSE,row.names = FALSE,quote = FALSE)
+        write.table(sm.tped,filepath.tped.new, sep=" ",col.names=FALSE,row.names = TRUE,quote = FALSE)
 
         if (i==1){
-                write.table(ped,filepath.ped, sep="\t",col.names=TRUE,row.names = FALSE,quote = FALSE)
+                write.table(ped,filepath.ped, sep="\t",col.names=FALSE,row.names = FALSE,quote = FALSE)
         }
 
         filepaths<-c(filepath.tped.new, filepath.ped, filepath.map.new)
@@ -136,40 +172,50 @@ RV_TDT<-function(geno, ped, window.size=25, window.type = "M", param){
 
 .runRV_TDTOnWindow<-function(input.filepaths, param){
 
-        runRV_TDTOnWindow(input.filepaths, param)
-        results<-extract.results()
-        clean.up.rv_tdt()
-        return(results)
+        .calculateRV_TDTOnWindow(input.filepaths, param)
+        #results<-.extract.results()
+        #.clean.up.rv_tdt()
+        #return(results)
 
 }
 
 ############################
 
-.runRV_TDTOnWindow<-function(input.filepaths, param=NULL){
+.calculateRV_TDTOnWindow<-function(input.filepaths, param=NULL){
 
         filepath.tped<-input.filepaths[1]
         filepath.phen<-input.filepaths[2]
         filepath.map<-input.filepaths[3]
         
-        adapt<-100
+        #TODO: Add checks for the param variable
+        if (param == NULL){
+        	        adapt<-100
         alpha<-0.00001
         permut<-1000
         u<-0.01
+        } else {
+        	adapt<-param[1]
+        alpha<-param[2]
+        permut<-param[3]
+        u<-param[4]
+        }
         
-        #TODO: Fix this
+        #TODO: Fix this to match the filepath in the install RV_TDT directories
+        rv.tdt.dir<-"'/Users/lindagai 1/Documents/classes/4th year/Research/rvtrio/rv-tdt-master/rvTDT'"
         
-        rv.tdt.dir<-"x"
-        
-        rv.tdt.results.dir<-paste0(data.dir,file.param)
+        #TODO: Add directories for each window?
+        rv.tdt.results.dir<-paste0("./R")
         rv.tdt.results.dir
 
         command<-paste0(rv.tdt.dir, rv.tdt.results.dir,
                         " -G ", filepath.tped,
                         " -P ", filepath.phen,
                         " -M ", filepath.map,
-                        " --adapt 100 --alpha 0.00001 --permut 1000",
-                        " -u 0.01"
-        )
+                        " --adapt ", adapt,
+                        " --alpha ", alpha,
+                        "--permut ", permut,
+                        " -u ", u
+                        )
 
         command
 
