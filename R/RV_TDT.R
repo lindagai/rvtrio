@@ -1,4 +1,4 @@
-#' Calculating RV-TDT statistic for user-defined windows, either
+#' Calculating RV-TDT statistic for user-defined windows
 #' @param filepath.vcf absolute filepath of vcf
 #' @param filepath.ped absolute filepath of vcf
 #' @param window.type type of window, either number of markers ("M") or width of kilobase interval ("K")
