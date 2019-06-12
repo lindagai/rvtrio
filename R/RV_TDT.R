@@ -19,19 +19,36 @@
 
 ########################################################
 
-RV_TDT<-function(plink.ped, window.size=25, window.type = "M",param){
+RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, window.size=25, window.type = "M",param){
+        
+        #Check to see if RV_TDT has been installed
+        #TODO: Is there any way to install other software automatically?
+        #Install RV_TDT if it has not already been installed
+        # if (!.checkRV_TDT()){
+        # 	.installRV_TDT()
+        # }
+        
+        #Obtain ped/tped based on file input type
+        if(!is.null(plink.ped)){
+                #TODO: Add some error-checking	
+                ped <-plink.ped[,1:6]
+                tped<-.getTPED(plink = plink.ped))
 
-	#Check to see if RV_TDT has been installed
-	#TODO: Is there any way to install other software automatically?
-	#Install RV_TDT if it has not already been installed
-	# if (!.checkRV_TDT()){
-	# 	.installRV_TDT()
-	# }
-		ped <-plink.ped[,1:6]
-        tped<-.getTPED(plink.ped)
+        } else if !is.null(vcf) & !is.null(vcf.ped){
+                geno<-geno(vcf)$GT
+                rm(vcf)
+                ped<-vcf.ped
+                tped<-.getTPED(vcf.geno = geno)
+                
+        } else {
+                print("Check your input files.")
+                return(NULL)
+        }
+        
         map<-.getMAP(tped)
         results<-.runRV_TDT(window.size, window.type, ped, map, tped)
-
+        return(results)
+        
 }
 
 ########################################################
@@ -70,10 +87,19 @@ RV_TDT<-function(plink.ped, window.size=25, window.type = "M",param){
 
 ########################################################
 
-.getTPED<-function(plink.ped){
+.getTPED<-function(plink = NULL, vcf.geno = NULL){
 
-        tped<-as.data.frame(t(plink.ped[,7:ncol(plink.ped)]))
-        return(tped)
+        if(!is.null(plink)){
+                tped<-as.data.frame(t(plink[,7:ncol(plink)]))
+                return(tped)
+        } else if (!is.null(vcf.geno)) {
+                tped <- as.data.frame(unlist
+                                      (lapply(vcf.geno,data.table::tstrsplit, "/"),
+                                              recursive = FALSE)
+                )
+                rownames(tped)<-rownames(vcf.geno)
+                return(tped)
+        }
 
 }
 
@@ -235,7 +261,8 @@ RV_TDT<-function(plink.ped, window.size=25, window.type = "M",param){
 
 .clean.up.rv_tdt<-function(input.filepaths){
 	
-	    #TODO: Fix this to be the R package directory, and to use filepath so it works on Windows
+	    #TODO: Fix getwd() to be the R package directory
+	    # Use filepath and not paste0 so it works on Windows
 
         #delete all input files
         filepath.tped<-paste0("'",input.filepaths[1],"'")
@@ -263,6 +290,5 @@ RV_TDT<-function(plink.ped, window.size=25, window.type = "M",param){
         delete.output.dir<-paste("rmdir", dir.pval, dir.results)
         print(delete.output.dir)
         #system(delete.output.dir)
-
 
 }
