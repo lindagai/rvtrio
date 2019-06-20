@@ -16,76 +16,48 @@
 #'
 
 #TODO: Make sure all filepaths would work on both Mac OS X and Windows
+#TODO: Add in position info for plink.ped
+#TODO: Put getting position info in its own function
+##TODO: snp.pos.df part could be made more efficient
+#TODO: tped probably shouldn't be 
 
 ########################################################
 
-RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, window.size=0, window.type = "M", param){
-
-        #TODO: Add some error-checking
-
-        #Check to see if RV_TDT has been installed
-        #TODO: Is there any way to install other software automatically?
-        #Install RV_TDT if it has not already been installed
-        # if (!.checkRV_TDT()){
-        # 	.installRV_TDT()
-        # }
-
+RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.size=0, window.type = "M", u = 0.2, param){
         #Obtain ped/tped and df of snp.names/positions based on file input type
+        
         if(!is.null(plink.ped)){
                 ped <-plink.ped[,1:6]
                 tped<-.getTPED(plink = plink.ped)
-
+                
         } else if (!is.null(vcf) & !is.null(vcf.ped)){
                 geno<-as.data.frame(geno(vcf)$GT)
                 snps<-as.data.frame(names(geno))
+
+                snp.pos.df<-as.data.frame(cbind(names(vcf),start(rowRanges(vcf))))
+                rm(vcf)
+                colnames(snp.pos.df)<-c("snp.name","pos")
+                
+                #Ensure pids in PED file are in the same order as in GENO/TPED
                 names(snps)<-"pids"
                 ped<-left_join(ped,snps, by=c("pid" ="pids"))
                 tped<-.getTPED(vcf.geno = geno)
 
+                
         } else {
                 print("Check your input files.")
                 return(NULL)
         }
-
+        
         map<-.getMAP(tped)
-        results<-.runRV_TDT(ped, map, tped)
+        results<-.runRV_TDT(ped, map, tped, rv.tdt.dir, window.size, snp.pos.df,u)
         return(results)
-     
+        
 }
 
 ########################################################
 
 # Helper Functions - RV_TDT
-
-########################################################
-
-.checkRV_TDT<-function(){
-		#TODO: Fix this
-		wd<-getwd()
-		filepath.RV_TDT<-file.path(wd,"RV-TDT")
-		f<-file.path(wd,"RV-TDT")
-		file.exists(f)
-}
-
-########################################################
-
-.installRV_TDT<-function(){
-
-    # cd "/Users/lindagai 1/Documents/classes/4th year/Research/rvtrio/rv-tdt-master"
-    # remove rvTDT zip file
-
-	#TODO: Fix this
-	wd<-getwd()
-	filepath.RV_TDT<-file.path(wd,"rv-tdt-master")
-
-	dl.RV_TDT<-paste0("wget -O ",filepath.RV_TDT,)
-	system(dl.RV_TDT)
-
-	make.rvTDT<-"make rvTDT"
-	system(make.rvTDT)
-
-
-}
 
 ########################################################
 
@@ -126,7 +98,7 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, window.size=0, wind
 
 ############################
 
-.runRV_TDT<-function(ped, map, tped, window.size=0,window.type  = "M"){
+.runRV_TDT<-function(ped, map, tped,rv.tdt.dir, window.size=0,snp.pos.df, window.type  = "M"){
 	
 	    n.snps<- nrow(map)
 
@@ -148,16 +120,18 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, window.size=0, wind
         #TODO: Get rid of for loop and use a list instead
         #Make this into a function, and use apply instead?
         #Indexing is very slow for data frames
+        
+  
 
         for (i in (1:n.windows)){
         	    start.index<-i
         		end.index<-min(i+window.size-1,n.snps)
         		mid.index<- floor(start.index + (end.index - start.index)/2)
                 input.filepaths<-.getInputFilesForWindow(ped,map,tped,window.type,start.index,end.index,i)
-                curr.window.result<-.runRV_TDTOnWindow(input.filepaths,adapt=100,alpha=0.00001,permut=1000,u=0.2)
+                curr.window.result<-.runRV_TDTOnWindow(input.filepaths,rv.tdt.dir,u)
+                pos.info<-.getWindowPos(start.index,mid.index,end.index,snp.pos.df)
                 results.df[i,1:7]<-curr.window.result
-                #pos.info<-.getWindowPos(i,start.index,mid.index,end.index)
-                results.df[i,1:7]<-curr.window.result
+                results.df[i,8:10]<-pos.info
           
         }
 
@@ -174,7 +148,7 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, window.size=0, wind
 .getInputFilesForWindow<-function(ped, map, tped, window.type,start.index,end.index,i){
         
         #TODO: fix this to get the directory functions.R is in
-        data.dir<-"./R/"
+        data.dir<-"./"
         
         file.param<-paste0("window",i,".",
                            start.index,"-",end.index,window.type)
@@ -203,13 +177,13 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, window.size=0, wind
 
 ############################
 
-.runRV_TDTOnWindow<-function(input.filepaths,adapt=100,alpha=0.00001,permut=1000,u=0.2){
+.runRV_TDTOnWindow<-function(input.filepaths,rv.tdt.dir,adapt=100,alpha=0.00001,permut=1000){
 
 		#TODO: Fix u to be 0.01
 		#TODO: Add in all the parameters that RV-TDT includes
 		#TODO: Modify command accordingly
 
-        .calculateRV_TDTOnWindow(input.filepaths)
+        .calculateRV_TDTOnWindow(input.filepaths,rv.tdt.dir)
         results<-.extract.results()
         .clean.up.rv_tdt(input.filepaths)
         return(results)
@@ -218,26 +192,25 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, window.size=0, wind
 
 ############################
 
-.calculateRV_TDTOnWindow<-function(input.filepaths,adapt=100,alpha=0.00001,permut=1000,u=0.2){
+.calculateRV_TDTOnWindow<-function(input.filepaths,rv.tdt.dir,adapt=100,alpha=0.00001,permut=1000){
 	
 		#TODO: Fix u to be 0.01
 		#TODO: Add in all the parameters that RV-TDT includes
 		#TODO: Modify command accordingly
 
-        #filepath.tped<-paste0("'",input.filepaths[1],"'")
-        #filepath.phen<-paste0("'",input.filepaths[2],"'")
-        #filepath.map<-paste0("'",input.filepaths[3],"'")
+        filepath.tped<-paste0("'",input.filepaths[1],"'")
+        filepath.phen<-paste0("'",input.filepaths[2],"'")
+        filepath.map<-paste0("'",input.filepaths[3],"'")
+		rv.tdt.dir<-paste0("'",rv.tdt.dir,"'")
         
-        filepath.tped<-paste0(input.filepaths[1])
-        filepath.phen<-paste0(input.filepaths[2])
-        filepath.map<-paste0(input.filepaths[3])
+        #filepath.tped<-paste0(input.filepaths[1])
+        #filepath.phen<-paste0(input.filepaths[2])
+        #filepath.map<-paste0(input.filepaths[3])
 
-        #TODO: Fix this to match the filepath in the install RV_TDT directories
-        rv.tdt.dir<-"'/Users/lindagai 1/Documents/classes/4th year/Research/rvtrio/rv-tdt-master/rvTDT'"
         gene.name<-"NA"
 
         #TODO: Add directories for each window?
-        rv.tdt.results.dir<-paste0(" ./R/",gene.name)
+        rv.tdt.results.dir<-paste0("./",gene.name)
         rv.tdt.results.dir
 
         command<-paste0(rv.tdt.dir, " ", rv.tdt.results.dir,
@@ -250,17 +223,23 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, window.size=0, wind
                         " -u ", u
         )
 
-        print(command)
+        #print(command)
         system(command)
 
 }
 
 ############################
 
-.getWindowPos<-function(i,start.index,mid.index,end.index){
+.getWindowPos<-function(start.index,mid.index,end.index,snp.pos.df){
 	
 	# Get start, end, middle position of each window 
+	start.pos<-as.character(snp.pos.df$pos[start.index])
+	mid.pos<-as.character(snp.pos.df$pos[start.index])
+	end.pos<-as.character(snp.pos.df$pos[end.index])
+	pos.info<-c(start.pos,mid.pos,end.pos)
+	
 	# Add to results df for easier graphing
+	return(pos.info)
 	
 }
 
@@ -272,7 +251,7 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, window.size=0, wind
 
 .extract.results<-function(){
         gene.name<-"NA"
-        filepath.results<-paste0("./R/",gene.name,"_pval/",gene.name,".pval")
+        filepath.results<-paste0("./",gene.name,"_pval/",gene.name,".pval")
         filepath.results
         pval.df<-read.table(filepath.results,comment.char = "",header=TRUE)
         pval.df
@@ -296,22 +275,22 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, window.size=0, wind
                                   filepath.map
         )
 
-        print(delete.input.files)
-        #system(delete.input.files)
+        #print(delete.input.files)
+        system(delete.input.files)
 
         #delete all output files
         currwd<-getwd()
-        filepath.pval<-paste0("'",currwd,"/R/NA_pval/NA.pval","'")
-        filepath.results<-paste0("'",currwd,"/R/NA_rvTDT/NA.rvTDT","'")        
+        filepath.pval<-paste0("'",currwd,"/NA_pval/NA.pval","'")
+        filepath.results<-paste0("'",currwd,"/NA_rvTDT/NA.rvTDT","'")        
         delete.output.files<-paste("rm", filepath.pval, filepath.results)
-        print(delete.output.files)
-        #system(delete.output.files)
+        #print(delete.output.files)
+        system(delete.output.files)
         
         #delete all output directories
-        dir.pval<-paste0("'",currwd,"/R/NA_pval","'")
-        dir.results<-paste0("'",currwd,"/R/NA_rvTDT","'")        
+        dir.pval<-paste0("'",currwd,"/NA_pval","'")
+        dir.results<-paste0("'",currwd,"/NA_rvTDT","'")        
         delete.output.dir<-paste("rmdir", dir.pval, dir.results)
-        print(delete.output.dir)
-        #system(delete.output.dir)
+        #print(delete.output.dir)
+        system(delete.output.dir)
 
 }
