@@ -192,7 +192,7 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
 
 ############################
 
-.calculateRV_TDTOnWindow<-function(input.filepaths,rv.tdt.dir,adapt=100,alpha=0.00001,permut=1000){
+.calculateRV_TDTOnWindow<-function(input.filepaths,rv.tdt.dir,adapt=100,alpha=0.00001,permut=1000, u=0.1){
 	
 		#TODO: Fix u to be 0.01
 		#TODO: Add in all the parameters that RV-TDT includes
