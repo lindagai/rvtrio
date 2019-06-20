@@ -23,7 +23,8 @@
 
 ########################################################
 
-RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.size=0, window.type = "M", u = 0.2, param){
+RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.size=0, window.type = "M", upper = 0.2, param){
+	
         #Obtain ped/tped and df of snp.names/positions based on file input type
         
         if(!is.null(plink.ped)){
@@ -50,7 +51,7 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
         }
         
         map<-.getMAP(tped)
-        results<-.runRV_TDT(ped, map, tped, rv.tdt.dir, window.size, snp.pos.df,u)
+        results<-.runRV_TDT(ped, map, tped, rv.tdt.dir, window.size, snp.pos.df, u = upper)
         return(results)
         
 }
@@ -98,8 +99,8 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
 
 ############################
 
-.runRV_TDT<-function(ped, map, tped,rv.tdt.dir, window.size=0,snp.pos.df, window.type  = "M"){
-	
+.runRV_TDT<-function(ped, map, tped, rv.tdt.dir, window.size=0, snp.pos.df, u, window.type  = "M"){
+
 	    n.snps<- nrow(map)
 
         #return rv_tdt results as df
@@ -120,7 +121,6 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
         #TODO: Get rid of for loop and use a list instead
         #Make this into a function, and use apply instead?
         #Indexing is very slow for data frames
-        
   
 
         for (i in (1:n.windows)){
@@ -177,7 +177,7 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
 
 ############################
 
-.runRV_TDTOnWindow<-function(input.filepaths,rv.tdt.dir,adapt=100,alpha=0.00001,permut=1000, u){
+.runRV_TDTOnWindow<-function(input.filepaths,rv.tdt.dir,u,adapt=100,alpha=0.00001,permut=1000){
 
 		#TODO: Fix u to be 0.01
 		#TODO: Add in all the parameters that RV-TDT includes
@@ -192,7 +192,7 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
 
 ############################
 
-.calculateRV_TDTOnWindow<-function(input.filepaths,rv.tdt.dir,adapt=100,alpha=0.00001,permut=1000){
+.calculateRV_TDTOnWindow<-function(input.filepaths,rv.tdt.dir,u,adapt=100,alpha=0.00001,permut=1000){
 	
 		#TODO: Fix u to be 0.01
 		#TODO: Add in all the parameters that RV-TDT includes
