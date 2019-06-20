@@ -177,13 +177,13 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
 
 ############################
 
-.runRV_TDTOnWindow<-function(input.filepaths,rv.tdt.dir,adapt=100,alpha=0.00001,permut=1000){
+.runRV_TDTOnWindow<-function(input.filepaths,rv.tdt.dir,adapt=100,alpha=0.00001,permut=1000, u){
 
 		#TODO: Fix u to be 0.01
 		#TODO: Add in all the parameters that RV-TDT includes
 		#TODO: Modify command accordingly
 
-        .calculateRV_TDTOnWindow(input.filepaths,rv.tdt.dir)
+        .calculateRV_TDTOnWindow(input.filepaths,rv.tdt.dir, u)
         results<-.extract.results()
         .clean.up.rv_tdt(input.filepaths)
         return(results)
@@ -192,7 +192,7 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
 
 ############################
 
-.calculateRV_TDTOnWindow<-function(input.filepaths,rv.tdt.dir,adapt=100,alpha=0.00001,permut=1000, u=0.1){
+.calculateRV_TDTOnWindow<-function(input.filepaths,rv.tdt.dir,adapt=100,alpha=0.00001,permut=1000){
 	
 		#TODO: Fix u to be 0.01
 		#TODO: Add in all the parameters that RV-TDT includes
