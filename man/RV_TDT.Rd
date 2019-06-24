@@ -5,18 +5,36 @@
 \title{Calculating RV-TDT statistic for user-defined windows}
 \usage{
 RV_TDT(plink.ped = NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir,
-  window.size = 0, window.type = "M", u = 0.2, param)
+  window.size = 0, window.type = "M", adapt = 500, alpha = 1e-05,
+  permut = 2000, lower_cutoff = 0, upper_cutoff = 100,
+  minVariants = 3, maxMissRation = 1)
 }
 \arguments{
-\item{window.size}{window size size of window}
+\item{plink.ped}{PLINK ped file}
 
-\item{window.type}{type of window, either number of markers ("M") or width of kilobase interval ("K")}
+\item{vcf}{vcf file}
+
+\item{vcf.ped}{data frame containing pedigree information for the VCF}
+
+\item{window.size}{size of window in number of markers}
+
+\item{window.type}{type of window, either number of markers ("M") or width of kilobase interval ("K") (doesn't work yet)}
+
+\item{adapt}{To reduce computational time, adaptive permutation is used in /rvTDT/. Every /$adapt/ permutations (default: 500 permutations), the program will check if we should keep doing permutation (which means this gene looks promising to reach the desired alpha level), or we should give up on this gene (which means this gene will not reach the desired alpha level based on the permutations we have done so far, or we have done enough permutations)}
+
+\item{alpha}{alpha level in adaptive permutation}
+
+\item{permut}{The maximum number of permutations}
+
+\item{lower_cutoff}{The cutoffs to determine which variants we should include in the analysis. In this example, the third column of map file is the number of minor allele counts, and here we only include the variants who have minor allele counts less than 100}
+
+\item{upper_cutoff}{See lower_cutoff}
+
+\item{minVariants}{The minimum number of variant sites for a gene. Genes with variant site number less than minVariants will be excluded from analysis (after check missing);}
+
+\item{maxMissRation}{The max missing ratio allowed for a variant. The variants with missing ratio greater than maxMissRatio will be excluded from analysis. In this example, we generated the genetic data file without any missing genotypes, so /--maxMissRation 1/ is used here.}
 
 \item{param}{parameters for RV-TDT}
-
-\item{filepath.vcf}{absolute filepath of vcf}
-
-\item{filepath.ped}{absolute filepath of vcf}
 }
 \value{
 results data frame containing results from RV-TDT
