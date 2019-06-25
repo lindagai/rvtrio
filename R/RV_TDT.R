@@ -25,6 +25,8 @@
 
 #' @return results data frame containing results from RV-TDT
 
+#' @importFrom VariantAnnotation rowRanges start geno
+
 #' @export
 #'
 #' @examples RV_TDT(filepath.vcf, filepath.ped)
