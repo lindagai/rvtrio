@@ -1,4 +1,7 @@
 #' Calculating RV-TDT statistic for user-defined windows
+
+#' `RV_TDT()` returns a data frame containing the RV_TDT statistic for a VCF or PLINK ped file. Note that RV_TDT only works for Linux and Mac OS X.
+
 #' @param plink.ped PLINK ped file
 #' @param vcf vcf file
 #' @param vcf.ped data frame containing pedigree information for the VCF
@@ -18,13 +21,9 @@
 
 #' @param minVariants The minimum number of variant sites for a gene. Genes with variant site number less than minVariants will be excluded from analysis (after check missing);
 
-#' @param maxMissRation The max missing ratio allowed for a variant. The variants with missing ratio greater than maxMissRatio will be excluded from analysis. In this example, we generated the genetic data file without any missing genotypes, so /--maxMissRation 1/ is used here.
+#' @param maxMissRatio The max missing ratio allowed for a variant. The variants with missing ratio greater than maxMissRatio will be excluded from analysis. In this example, we generated the genetic data file without any missing genotypes, so /--maxMissRatio 1/ is used here.
 
 #' @return results data frame containing results from RV-TDT
-
-#' @importFrom dplyr left_join
-#' @importFrom varhandle unfactor
-
 
 #' @export
 #'
@@ -36,22 +35,27 @@
 
 ########################################################
 
-RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.size=0, window.type = "M", adapt = 500, alpha = 0.00001, permut = 2000, lower_cutoff = 0, upper_cutoff = 100, minVariants = 3, maxMissRation = 1){
+RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.size=0, window.type = "M", adapt = 500, alpha = 0.00001, permut = 2000, lower_cutoff = 0, upper_cutoff = 100, minVariants = 3, maxMissRatio = 1){
 
 	    #Extract parameters
-	    parameters<-c(adapt, alpha, permut,lower_cutoff, upper_cutoff, minVariants,maxMissRation)
+	    parameters<-c(adapt, alpha, permut,lower_cutoff, upper_cutoff, minVariants,maxMissRatio)
 
         #Obtain ped/tped and df of snp.names/positions based on file input type
         if(!is.null(plink.ped)){
                 ped <-plink.ped[,1:6]
                 tped<-.getTPED(plink = plink.ped)
+                
+                #Ensure pids in PED file are in the same order as in GENO/TPED
         } else if (!is.null(vcf) & !is.null(vcf.ped)){
+        	    #Get positions and SNP names
+                snp.pos.df<-as.data.frame(cbind(names(vcf),start(rowRanges(vcf))))
+                colnames(snp.pos.df)<-c("snp.name","pos")
+                
+                #Get genotypes and SNP names
                 geno<-as.data.frame(geno(vcf)$GT)
                 snps<-as.data.frame(names(geno))
-
-                snp.pos.df<-as.data.frame(cbind(names(vcf),start(rowRanges(vcf))))
+                
                 rm(vcf)
-                colnames(snp.pos.df)<-c("snp.name","pos")
 
                 #Ensure pids in PED file are in the same order as in GENO/TPED
                 names(snps)<-"pids"
@@ -192,10 +196,6 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
 
 .runRV_TDTOnWindow<-function(input.filepaths,rv.tdt.dir,param){
 
-        #TODO: Fix u to be 0.01
-        #TODO: Add in all the parameters that RV-TDT includes
-        #TODO: Modify command accordingly
-
         .calculateRV_TDTOnWindow(input.filepaths,rv.tdt.dir, param)
         results<-.extract.results()
         .clean.up.rv_tdt(input.filepaths)
@@ -223,7 +223,7 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
 
         minVariants<-param[6]
 
-        maxMissRation <-param[7]
+        maxMissRatio <-param[7]
 
         filepath.tped<-paste0("'",input.filepaths[1],"'")
         filepath.phen<-paste0("'",input.filepaths[2],"'")
@@ -250,7 +250,7 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
                         " --lower_cutoff ", lower_cutoff,
                                 " --upper_cutoff ", upper_cutoff,
                                     " --minVariants ", minVariants,
-                                    " --maxMissRation ", maxMissRation
+                                    " --maxMissRatio ", maxMissRatio
         )
 
         #print(command)
@@ -292,9 +292,6 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
 ############################
 
 .clean.up.rv_tdt<-function(input.filepaths){
-
-        #TODO: Fix getwd() to be the R package directory
-        # Use filepath and not paste0 so it works on Windows
 
         #delete all input files
         filepath.tped<-paste0("'",input.filepaths[1],"'")

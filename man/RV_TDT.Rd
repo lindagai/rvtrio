@@ -7,7 +7,7 @@
 RV_TDT(plink.ped = NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir,
   window.size = 0, window.type = "M", adapt = 500, alpha = 1e-05,
   permut = 2000, lower_cutoff = 0, upper_cutoff = 100,
-  minVariants = 3, maxMissRation = 1)
+  minVariants = 3, maxMissRatio = 1)
 }
 \arguments{
 \item{plink.ped}{PLINK ped file}
@@ -32,7 +32,7 @@ RV_TDT(plink.ped = NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir,
 
 \item{minVariants}{The minimum number of variant sites for a gene. Genes with variant site number less than minVariants will be excluded from analysis (after check missing);}
 
-\item{maxMissRation}{The max missing ratio allowed for a variant. The variants with missing ratio greater than maxMissRatio will be excluded from analysis. In this example, we generated the genetic data file without any missing genotypes, so /--maxMissRation 1/ is used here.}
+\item{maxMissRatio}{The max missing ratio allowed for a variant. The variants with missing ratio greater than maxMissRatio will be excluded from analysis. In this example, we generated the genetic data file without any missing genotypes, so /--maxMissRatio 1/ is used here.}
 
 \item{param}{parameters for RV-TDT}
 }
