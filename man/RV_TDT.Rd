@@ -2,7 +2,8 @@
 % Please edit documentation in R/RV_TDT.R
 \name{RV_TDT}
 \alias{RV_TDT}
-\title{Calculating RV-TDT statistic for user-defined windows}
+\title{Calculating RV-TDT statistic for user-defined windows
+`RV_TDT()` returns a data frame containing the RV_TDT statistic for a VCF or PLINK ped file. Note that RV_TDT only works for Linux and Mac OS X.}
 \usage{
 RV_TDT(plink.ped = NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir,
   window.size = 0, window.type = "M", adapt = 500, alpha = 1e-05,
@@ -41,6 +42,7 @@ results data frame containing results from RV-TDT
 }
 \description{
 Calculating RV-TDT statistic for user-defined windows
+`RV_TDT()` returns a data frame containing the RV_TDT statistic for a VCF or PLINK ped file. Note that RV_TDT only works for Linux and Mac OS X.
 }
 \examples{
 RV_TDT(filepath.vcf, filepath.ped)
