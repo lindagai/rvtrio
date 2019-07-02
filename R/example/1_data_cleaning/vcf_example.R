@@ -39,25 +39,24 @@ ped <- read.csv(filepath.ped)
 #Examine the genotypes of the VCF
 table(geno(vcf)$GT)
 
-#i. Set half-calls to missing
-geno(vcf)$GT[geno(vcf)$GT == "."]<-"."
-geno(vcf)$GT[geno(vcf)$GT == "1/."]<-"."
-geno(vcf)$GT[geno(vcf)$GT == "0/."]<-"."
+#i. Set half-calls to missing; must include "/" separator so BEAGLE can read it
+geno(vcf)$GT[geno(vcf)$GT == "."]<-"./."
+geno(vcf)$GT[geno(vcf)$GT == "1/."]<-"./."
+geno(vcf)$GT[geno(vcf)$GT == "0/."]<-"./."
 
-#ii. Genotype formatting
-#Ensure that the VCF's genotypes are in 0/0 format so BEAGLE can read it
+table(geno(vcf)$GT)
 
-#iii. Remove multi-allelic SNPs/duplicate sites
+#iii. Remove duplicated sites and multi-allelic SNPs
+dups<-duplicated(start(rowRanges(vcf)))
 duplicate.sites<-start(rowRanges(vcf))[duplicated(start(rowRanges(vcf)))]
 vcf<-vcf[-which(start(rowRanges(vcf)) %in% duplicate.sites),]
 
-#iV. Remove unnamed SNPs
+#iv. Check for SNPs with duplicate names
 names<-names(rowRanges(vcf))
-names
+names[1:5]
+anyNA(names)
 sum(duplicated(names(rowRanges(vcf))))
-duplicate.snps<-names(rowRanges(vcf))[duplicated(names(rowRanges(vcf)))]
-duplicate.snps
-vcf<-vcf[-which(start(rowRanges(vcf)) %in% duplicate.sites),]
+#0, so we are good
 
 #v. Write out
 filepath.filtered.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.07_1_19.vcf"
@@ -109,13 +108,11 @@ ped <- ped %>%
         mutate(motid = ifelse(motid == 0, "0",
                               paste0("H_TZ-",motid,"-",motid)))
 
-#Identify any PIDs in VCF but not in PED
+#Identify any PIDs in VCF but not in PED and vice versa
 ped.pid<-ped$pid
-
-#Identify any PIDs in VCF but not in PED
-setdiff(vcf.pid,ped.pid)
-#Identify any PIDs in PED but not in VCF
-setdiff(ped.pid,vcf.pid)
+vcf.pid<-colnames(geno(vcf)$GT)
+setdiff(vcf.pid,ped$pid)
+setdiff(ped$pid,vcf.pid)
 
 #These IDs in VCF contain a B, so we edit them in PED
 pids.to.edit <-setdiff(ped.pid,vcf.pid)
@@ -159,9 +156,14 @@ write.table(ped, filepath.ped.cleaned, sep=" ", col.names = TRUE, row.names = FA
 # system(dl.beagle4)
 
 #Phase vcf
-filepath.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.vcf"
-filepath.ped<-"/users/lgai/8q24_project/data/processed_data/gmkf_euro_completetrios_ids_match_vcf_mend_errors_removed.txt"
-filepath.phased.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.phased"
+# filepath.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.vcf"
+# filepath.ped<-"/users/lgai/8q24_project/data/processed_data/gmkf_euro_completetrios_ids_match_vcf_mend_errors_removed.txt"
+# filepath.phased.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.phased"
+
+filepath.beagle4<-"/users/lgai/beagle.r1399.jar"
+filepath.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.07_1_19.vcf"
+filepath.ped<-"/users/lgai/8q24_project/data/processed_data/gmkf_euro_completetrios_07_01_2019.txt"
+filepath.phased.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.07_1_19.phased"
 
 phase.command<-paste0("java -Xmx10000m -jar ", filepath.beagle4,
                       " gt=",filepath.vcf,
@@ -171,20 +173,98 @@ phase.command
 
 system(phase.command)
 
+#Runtime: 47 minutes 45 seconds
+
+################################################################################
+#IV. Checking for Mendelian errors
+
+#Phasing is done first because R's trio.check function does not accept missing observations
+#TODO: does it matter whether you phase first?
+
+filepath.phased.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.07_1_19.phased.vcf.gz"
+hg.assembly<-"hg19"
+vcf <- readVcf(filepath.phased.vcf, hg.assembly)
+# test<-geno(vcf)$GT
+# test[1:5,1:5]
+
+table(geno(vcf)$GT)
+# 0|0      0|1      1|0      1|1
+# 13906325   339580   331028   200851
+
+#For trio to read in the genotupes, we must replace all instances of 0|0 with 0/0, etc.
+geno(vcf)$GT<-gsub("\\|", "\\/",geno(vcf)$GT)
+
+table(geno(vcf)$GT)
+# 0/0      0/1      1/0      1/1
+# 14081894   360053   350895   205922
+
+#v. Write out
+filepath.formatted.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.07_1_19.phased.formatted.vcf"
+writeVcf(vcf,filepath.formatted.vcf)
+
+#The trio package can't read in "1/0", so we must rename it
+#i. Set half-calls to missing; must include "/" separator so BEAGLE can read it
+geno(vcf)$GT[geno(vcf)$GT == "1/0"]<-"0/1"
+
+#This does not work bc the phased VCF does not include PIDs
+trio.geno<-vcf2geno(vcf,ped)
+trio.geno[1:5,1:5]
+
+trio.geno
+
+#test<-data.frame(cbind(rownames(trio.geno),trio.geno),c("pid",colnames(trio.geno)))
+colnames(trio.geno)[1]<-"pid"
+trio.geno[1:5,1:5]
+
+#Check -- do the PIDs match as we expect? PUT THIS INTO TESTS
+vcf.pid<-colnames(geno(vcf)$GQ)
+setdiff(vcf.pid,ped$pid)
+setdiff(ped$pid,vcf.pid)
+setdiff(ped$fatid,ped$pid)
+setdiff(ped$motid,ped$pid)
+
+# Warning messages:
+# 2: In vcf2geno(vcf, ped) :
+#         Since 3205 of the SNVs were monomorphic, these SNVs were removed.
+
+library(trio)
+filepath.ped<-"/users/lgai/8q24_project/data/processed_data/gmkf_euro_completetrios_07_01_2019.txt"
+ped <- read.table(filepath.ped,header=TRUE)
+head(ped)
+ped.test<-ped[,c("famid","pid")]
+head(ped.test)
+
+setdiff(trio.geno$pid,ped.test$pid)
+setdiff(ped.test$pid,trio.geno$pid)
+head(data.frame(trio.geno$pid,ped.test$pid))
+typeof(ped.test$pid)
+typeof(trio.geno$pid)
+
+# geno.with.famid<-dplyr::left_join(data.frame(ped.test),data.frame(trio.geno))
+# test<-geno.with.famid[1:5,1:5]
+# geno.with.famid2<-mapply(geno.with.famid[,3:ncol(geno.with.famid)],as.character)
+# geno.with.famid2[1:5]
+# geno.with.famid3<-sapply(geno.with.famid2,as.numeric)
+# geno.with.famid3[1:5]
+# sapply(test2,as.numeric)
+#
+# typeof(geno.with.famid[3,3])
+# dim(geno.with.famid)
+
+#vii. Write out
+filepath.geno.with.famid<-"/users/lgai/8q24_project/data/processed_data/geno.with.famid_07_02_2019.txt"
+write.table(geno.with.famid, filepath.geno.with.famid, sep=" ", col.names = TRUE, row.names = FALSE,quote = FALSE)
+
+#TODO: Set the geno matrix's genotype entries to numeric, not integer, so you can run trio.check!
+#You also need to fix the SNP names to match the VCF
+filepath.geno.with.famid<-"/users/lgai/8q24_project/data/processed_data/geno.with.famid_07_02_2019.txt"
+geno.with.famid<- read.table(filepath.geno.with.famid,header=TRUE)
+geno.with.famid[1:5,1:5]
+
+trio.test.for.mend.err <- trio::trio.check(dat=geno.with.famid,is.linkage=FALSE)
+# Error in trioFile.proc(data = dat, dig1Code = c(NA, 0, 1, 2), action = c("Mendelian check")) :
+#         Genotypes must be numerical.
 ################################################################################
 
 #Now you are ready to start analyzing your data! Filtering by annotation is recommended for rare variants analysis.
-
-#test
-filepath.vcf.test<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.vcf"
-vcf <- readVcf(filepath.vcf.test, hg.assembly)
-table(geno(vcf)$GT)
-#       .      0/.      0/0      0/1      1/.      1/1
-
-filepath.vcf.phased<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.phased.vcf"
-vcf <- readVcf(filepath.vcf.phased, hg.assembly)
-table(geno(vcf)$GT)
-#     0|0      0|1      1|0      1|1
-# 13906325   339580   331028   200851
-
 
