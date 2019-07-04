@@ -255,15 +255,64 @@ typeof(trio.geno$pid)
 filepath.geno.with.famid<-"/users/lgai/8q24_project/data/processed_data/geno.with.famid_07_02_2019.txt"
 write.table(geno.with.famid, filepath.geno.with.famid, sep=" ", col.names = TRUE, row.names = FALSE,quote = FALSE)
 
+filepath.geno.with.famid<-"/users/lgai/8q24_project/data/processed_data/geno.with.famid_07_02_2019.txt"
+geno.with.famid <- read.table(filepath.geno.with.famid,header=TRUE)
+geno.with.famid[1:5,1:5]
+
+snp.names<-rownames(geno(vcf)$GT)
+snp.names[1:5]
+
 #TODO: Set the geno matrix's genotype entries to numeric, not integer, so you can run trio.check!
 #You also need to fix the SNP names to match the VCF
 filepath.geno.with.famid<-"/users/lgai/8q24_project/data/processed_data/geno.with.famid_07_02_2019.txt"
 geno.with.famid<- read.table(filepath.geno.with.famid,header=TRUE)
+geno.with.famid[,3:ncol(geno.with.famid)] <- lapply(geno.with.famid[,3:ncol(geno.with.famid)], as.numeric)
 geno.with.famid[1:5,1:5]
 
-trio.test.for.mend.err <- trio::trio.check(dat=geno.with.famid,is.linkage=FALSE)
-# Error in trioFile.proc(data = dat, dig1Code = c(NA, 0, 1, 2), action = c("Mendelian check")) :
-#         Genotypes must be numerical.
+#Check
+# geno.with.famid[1:5,1:5]
+# test<-colnames(geno.with.famid[,3:ncol(geno.with.famid)])
+# head(test)
+# tail(test)
+# head(snp.names)
+# tail(snp.names)
+#snp.names don't match but it doesn't really matter
+
+#Make sure it's numeric
+#geno.with.famid[2:13] <- lapply(geno.with.famid[2:13], as.numeric)
+
+# sm.geno.with.famid<-geno.with.famid[,1:20]
+# trio.tmp <- trio::trio.check(dat=sm.geno.with.famid,is.linkage=FALSE)
+# str(trio.tmp, max=1)
+# test<-trio.tmp$errors
+# library(dplyr)
+# test %>% filter(famid=="GMKF0097")
+# sort(table(trio.tmp$errors$famid),decreasing = TRUE)[1:10]
+
+################################################################################
+
+#Remove families with large number of Mendelian errors from VCF and PED
+
+#Remove families with large number of Mendelian errors from VCF
+
+#Remove families with large number of Mendelian errors from PED
+
+################################################################################
+#Start: 4 PM
+#Frozen: Around 5 PM?
+#Run this on the whole dataset after you're sure it works on the small test set!
+trio.tmp <- trio::trio.check(dat=geno.with.famid,is.linkage=FALSE)
+#takes awhile to run!
+
+filepath.trio.tmp<-"/users/lgai/8q24_project/data/processed_data/trio.check.output_07_03_2019.txt"
+saveRDS(trio.tmp,filepath.trio.tmp)
+
+filepath.trio.tmp.errors<-"/users/lgai/8q24_project/data/processed_data/trio.mend.errors_07_03_2019.txt"
+write.table(trio.tmp$errors, filepath.trio.tmp.errors, sep=" ", col.names = TRUE, row.names = FALSE,quote = FALSE)
+
+mend.err.sorted<-sort(table(trio.tmp$errors$famid),decreasing = TRUE)
+mend.err.sorted[1:30]
+
 ################################################################################
 
 #Now you are ready to start analyzing your data! Filtering by annotation is recommended for rare variants analysis.
