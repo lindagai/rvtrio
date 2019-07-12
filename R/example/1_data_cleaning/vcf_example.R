@@ -7,6 +7,8 @@
 #Sign into cluster
 ssh -X lgai@jhpce01.jhsph.edu
 
+#Ensure X11 forwarding is set up so you can graph
+
 #Allocate memory
 qrsh -l mem_free=15G,h_vmem=16G,h_fsize=18G
 module load R
@@ -20,6 +22,7 @@ library(VariantAnnotation)
 library(trio)
 library(rvtrio)
 library(dplyr)
+library(ggplot2)
 
 ################################################################################
 #I. Load input files
@@ -223,10 +226,6 @@ setdiff(ped$pid,vcf.pid)
 setdiff(ped$fatid,ped$pid)
 setdiff(ped$motid,ped$pid)
 
-# Warning messages:
-# 2: In vcf2geno(vcf, ped) :
-#         Since 3205 of the SNVs were monomorphic, these SNVs were removed.
-
 library(trio)
 filepath.ped<-"/users/lgai/8q24_project/data/processed_data/gmkf_euro_completetrios_07_01_2019.txt"
 ped <- read.table(filepath.ped,header=TRUE)
@@ -234,6 +233,7 @@ head(ped)
 ped.test<-ped[,c("famid","pid")]
 head(ped.test)
 
+#Check
 setdiff(trio.geno$pid,ped.test$pid)
 setdiff(ped.test$pid,trio.geno$pid)
 head(data.frame(trio.geno$pid,ped.test$pid))
@@ -291,15 +291,6 @@ geno.with.famid[1:5,1:5]
 
 ################################################################################
 
-#Remove families with large number of Mendelian errors from VCF and PED
-
-#Remove families with large number of Mendelian errors from VCF
-
-#Remove families with large number of Mendelian errors from PED
-
-################################################################################
-#Start: 4 PM
-#Frozen: Around 5 PM?
 #Run this on the whole dataset after you're sure it works on the small test set!
 trio.tmp <- trio::trio.check(dat=geno.with.famid,is.linkage=FALSE)
 #takes awhile to run!
@@ -310,10 +301,38 @@ saveRDS(trio.tmp,filepath.trio.tmp)
 filepath.trio.tmp.errors<-"/users/lgai/8q24_project/data/processed_data/trio.mend.errors_07_03_2019.txt"
 write.table(trio.tmp$errors, filepath.trio.tmp.errors, sep=" ", col.names = TRUE, row.names = FALSE,quote = FALSE)
 
-mend.err.sorted<-sort(table(trio.tmp$errors$famid),decreasing = TRUE)
-mend.err.sorted[1:30]
+################################################################################
+
+#Graph the number of Mendelian errors
+filepath.trio.tmp.errors<-"/users/lgai/8q24_project/data/processed_data/trio.mend.errors_07_03_2019.txt"
+trio.tmp.errors <- read.table(filepath.trio.tmp.errors,header=TRUE)
+head(trio.tmp.errors)
+
+mend.err.sorted<-as.data.frame(sort(table(trio.tmp.errors$famid),decreasing = TRUE))
+colnames(mend.err.sorted)<-c("famid","mend.errors")
+mend.err.sorted[1:20,]
+
+#Save this graph
+mend.err.plot.fp<-"/users/lgai/8q24_project/data/processed_data/8q24.mendelian.error.plot.pdf"
+pdf(file=mend.err.plot.fp)
+
+ggplot(mend.err.sorted, aes(x=famid,y=mend.errors)) +
+        geom_bar(stat="identity") +
+        xlab("Family ID") + ylab("Mendelian error count") +
+        theme(axis.text.x=element_blank(),
+              axis.ticks.x=element_blank()
+              )
+dev.off()
+
+################################################################################
+#Remove 15 families with large number of
+
+#Remove families with large number of Mendelian errors from VCF and PED
+
+#Remove families with large number of Mendelian errors from VCF
+
+#Remove families with large number of Mendelian errors from PED
 
 ################################################################################
 
 #Now you are ready to start analyzing your data! Filtering by annotation is recommended for rare variants analysis.
-
