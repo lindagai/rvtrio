@@ -138,9 +138,9 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
                 "start.pos","mid.window.pos","end.pos"
         )
 
-        #TODO: Get rid of for loop and use a list instead
-        #Make this into a function, and use apply instead?
-        #Indexing is very slow for data frames
+        #TODO: Get rid of for loop
+        #Make this into a function and use apply instead
+        #Indexing is very slow for data frames!!
 
         for (i in (1:n.windows)){
         	    start.index<-i
