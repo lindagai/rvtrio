@@ -1,4 +1,5 @@
 #TODO: Automate: BEAGLE phasing
+#       separate this into
 
 ################################################################################
 #0. Set up
@@ -6,6 +7,7 @@
 
 #Sign into cluster
 ssh -X lgai@jhpce01.jhsph.edu
+ssh -X lgai@jhpce01.jhsph.edu -o ForwardX11Timeout=336h
 
 #Ensure X11 forwarding is set up so you can graph
 
@@ -310,7 +312,7 @@ head(trio.tmp.errors)
 
 mend.err.sorted<-as.data.frame(sort(table(trio.tmp.errors$famid),decreasing = TRUE))
 colnames(mend.err.sorted)<-c("famid","mend.errors")
-mend.err.sorted[1:20,]
+mend.err.sorted[1:10,]
 
 #Save this graph
 mend.err.plot.fp<-"/users/lgai/8q24_project/data/processed_data/8q24.mendelian.error.plot.pdf"
@@ -324,15 +326,57 @@ ggplot(mend.err.sorted, aes(x=famid,y=mend.errors)) +
               )
 dev.off()
 
-################################################################################
-#Remove 15 families with large number of
+#Examine extreme end
+mend.err.plot.top20.fp<-"/users/lgai/8q24_project/data/processed_data/8q24.mendelian.error.plot.top20.pdf"
+pdf(file=mend.err.plot.top20.fp)
+ggplot(mend.err.sorted[1:20,], aes(x=famid,y=mend.errors)) +
+        geom_bar(stat="identity") +
+        xlab("Family ID") + ylab("Mendelian error count") +
+        theme(axis.text.x=element_text(angle = 90)
+        )
+dev.off()
 
-#Remove families with large number of Mendelian errors from VCF and PED
+################################################################################
+#Remove 5 families with large number of Mendelian errors
+
+fam.rm<-as.character(mend.err.sorted[1:5,1])
+fam.rm
+
+#Remove families with large number of Mendelian errors from PED
+filepath.ped<-"/users/lgai/8q24_project/data/processed_data/gmkf_euro_completetrios_07_01_2019.txt"
+ped <- read.table(filepath.ped,header=TRUE)
+dim(ped)
+
+#Get the PIDs of the individuals in the families to be removed
+pid.rm <- ped %>%
+        filter(famid %in% fam.rm)
+
+head(pid.rm)
+dim(pid.rm)
+
+#NOTE: select can be masked
+pid.rm %>% select(pid)
+
+new.ped <- ped %>%
+        filter(!(famid %in% fam.rm))
+
+filepath.new.ped<-"/users/lgai/8q24_project/data/processed_data/gmkf_euro_completetrios_mend_err_removed_07_12_2019.txt"
+write.table(new.ped, filepath.new.ped, sep=" ", col.names = TRUE, row.names = FALSE,quote = FALSE)
 
 #Remove families with large number of Mendelian errors from VCF
 
-#Remove families with large number of Mendelian errors from PED
+#TODO: Check to see if this is the correct way to do it
+filepath.formatted.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.07_1_19.phased.formatted.vcf"
+hg.assembly<-"hg19"
+vcf <- readVcf(filepath.formatted.vcf, hg.assembly)
+
+removed.geno <-geno(vcf)$GT[, colnames(geno(vcf)$GT) %in% pid.rm$pid ]
+geno(vcf)$GT <- removed.geno
+
+filepath.mend.err.rm.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.phased.formatted.mend.err.rm.07_15_19.vcf"
+hg.assembly<-"hg19"
+writeVcf(vcf,filepath.mend.err.rm.vcf)
 
 ################################################################################
 
-#Now you are ready to start analyzing your data! Filtering by annotation is recommended for rare variants analysis.
+#Now you are ready to start analyzing your data!
