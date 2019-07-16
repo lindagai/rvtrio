@@ -54,7 +54,8 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
                 colnames(snp.pos.df)<-c("snp.name","pos")
                 
                 #Get genotypes and SNP names
-                geno<-as.data.frame(geno(vcf)$GT)
+                #TODO: Is the as.data.frame necessary?
+                geno<-geno(vcf)$GT
                 snps<-as.data.frame(names(geno))
                 
                 rm(vcf)
@@ -87,15 +88,10 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
         if(!is.null(plink)){
                 tped<-as.data.frame(t(plink[,7:ncol(plink)]))
         } else if (!is.null(vcf.geno)) {
-                tped <- as.data.frame(unlist
-                                      (lapply(vcf.geno,data.table::tstrsplit, "/"),
-                                              recursive = FALSE)
-                )
-                tped<-sapply(tped, varhandle::unfactor)
-                rownames(tped)<-rownames(vcf.geno)
+				tped<-as.matrix(splitstackshape::cSplit(vcf.geno, colnames(vcf.geno), c("/")))
+				rownames(tped) <-rownames(vcf.geno)
         }
         return(tped)
-
 }
 
 ############################
