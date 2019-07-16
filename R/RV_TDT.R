@@ -108,7 +108,7 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
         gene.id.vec<-rep(gene.id,n.snps)
         snps<-rownames(tped)
         mafs<-as.vector(rowMeans(tped))
-        map<-as.data.frame(cbind(gene.id.vec,snps,mafs))
+        map<-as.data.frame(cbind(gene.id.vec,snps,mafs), stringsAsFactors=FALSE)
         return(map)
 
 }
