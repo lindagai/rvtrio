@@ -1,0 +1,84 @@
+---
+title: "Trio analysis for common and rare variants using RV-TDT"
+author:
+- name: Linda Gai
+  affiliation: Johns Hopkins School of Public Health
+  email: lindagai@jhu.edu
+output:
+  BiocStyle::html_document
+abstract: |
+  Workflow for trio analysis for common and rare variants.
+vignette: |
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Introduction
+
+Here, we present a workflow for case-parent trio analysis, for both common and rare variants, using a small test VCF. We first start with a raw VCF file and show how to reformat the files into the appropriate shape for rare variants analysis.  We then show how to filter the rare variants sets into more informative variant sets, using annotation and position information, to increase power of the statistical tests. We then perform transmission disequilibrium tests for common variants using the trio package, and perform rare variant trio analysis using RV-TDT. Finally, we outline a few methods for plotting the results. 
+
+We use case-parent trios of cleft palate data from Kids First as an example.
+
+# Setup
+
+## Downloading analysis software and databases
+### BEAGLE
+### RV-TDT
+### ANNOVAR
+### R packages
+
+# Preparing the dataset
+
+## Cleaning your VCF file prior to analysis
+
+### Example data set
+
+### Missing and half-calls
+#### i. Set half-calls to missing; must include "/" separator so BEAGLE can read it
+
+####iii. Remove duplicated sites and multi-allelic SNPs
+
+####iv. Check for SNPs with duplicate names
+
+## Cleaning your PED file prior to analysis
+### i. Ensure column names are correct
+###ii. Select only the necessary columns
+###iii. Ensure sex, affected are coded as 0/1, not "male/female" or "unaffected/affected"
+###iv. Ensure the PIDs in the VCF and PED files match
+###All subjects in vcf must also appear (with the same ID) in ped.
+###Examine PIDs in VCF and PED
+###Modify PIDs in PED to match VCF
+###Identify any PIDs in VCF but not in PED and vice versa
+###vii. Write out
+
+## Phasing
+
+## Checking for Mendelian errors
+
+# Common variants analysis
+
+In this workflow, we will consider 3 methods of common variant analysis: the allelic transmission disequilibrium test (aTDT), genotypic transmission disequilibrium test (gTDT), and Scan-Trio (in-progress).
+
+Both aTDT and gTDT can be performed using the *trio* package. *trio* accepts both PLINK ped files and VCF files. Additional documentation can be found at (link). The genotypic TDT is strongly recommended over the the allelic TDT, as the genotypic TDT can directly model the relative risk of disease, can be modified to account for additive, dominant, or recessive modes of inheritance, and can be modified to test for gene-environment interaction. In contrast, the allelic TDT can only report whether an allele is significant or not and must assume a multiplicative genetic model.
+
+## Genotypic TDT
+
+```{r}
+```
+
+## Allelic TDT
+
+```{r}
+```
+
+## Scan-Trio
+
+```{r}
+#in progress!
+```
+
+# Session info {.unnumbered}
+```{r sessionInfo, echo=FALSE}
+sessionInfo()
+```
