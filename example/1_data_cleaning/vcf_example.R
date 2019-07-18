@@ -189,8 +189,6 @@ system(phase.command)
 filepath.phased.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.07_1_19.phased.vcf.gz"
 hg.assembly<-"hg19"
 vcf <- readVcf(filepath.phased.vcf, hg.assembly)
-# test<-geno(vcf)$GT
-# test[1:5,1:5]
 
 table(geno(vcf)$GT)
 # 0|0      0|1      1|0      1|1
@@ -370,7 +368,7 @@ filepath.formatted.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.
 hg.assembly<-"hg19"
 vcf <- readVcf(filepath.formatted.vcf, hg.assembly)
 
-removed.geno <-geno(vcf)$GT[, colnames(geno(vcf)$GT) %in% pid.rm$pid ]
+removed.geno <-geno(vcf)$GT[, -colnames(geno(vcf)$GT) %in% pid.rm$pid ]
 geno(vcf)$GT <- removed.geno
 
 filepath.mend.err.rm.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.phased.formatted.mend.err.rm.07_15_19.vcf"
