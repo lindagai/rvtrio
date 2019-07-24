@@ -1,15 +1,10 @@
-#TODO: Automate: BEAGLE phasing
-#       separate this into
 
 ################################################################################
 #0. Set up
 #To run this in terminal from R studio, use option + command + enter
 
 #Sign into cluster
-ssh -X lgai@jhpce01.jhsph.edu
 ssh -X lgai@jhpce01.jhsph.edu -o ForwardX11Timeout=336h
-
-#Ensure X11 forwarding is set up so you can graph
 
 #Allocate memory
 qrsh -l mem_free=15G,h_vmem=16G,h_fsize=18G
@@ -19,7 +14,6 @@ R
 ################################################################################
 
 devtools::install_github("lindagai/rvtrio")
-#TODO: Fix importFrom in RV_TDT
 library(VariantAnnotation)
 library(trio)
 library(rvtrio)
@@ -289,7 +283,7 @@ geno.with.famid[1:5,1:5]
 # test %>% filter(famid=="GMKF0097")
 # sort(table(trio.tmp$errors$famid),decreasing = TRUE)[1:10]
 
-################################################################################
+############################
 
 #Run this on the whole dataset after you're sure it works on the small test set!
 trio.tmp <- trio::trio.check(dat=geno.with.famid,is.linkage=FALSE)
@@ -303,7 +297,7 @@ write.table(trio.tmp$errors, filepath.trio.tmp.errors, sep=" ", col.names = TRUE
 
 ################################################################################
 
-#Graph the number of Mendelian errors
+#VI. Graph the number of Mendelian errors
 filepath.trio.tmp.errors<-"/users/lgai/8q24_project/data/processed_data/trio.mend.errors_07_03_2019.txt"
 trio.tmp.errors <- read.table(filepath.trio.tmp.errors,header=TRUE)
 head(trio.tmp.errors)
@@ -335,12 +329,13 @@ ggplot(mend.err.sorted[1:20,], aes(x=famid,y=mend.errors)) +
 dev.off()
 
 ################################################################################
-#Remove 5 families with large number of Mendelian errors
+
+#VII. Remove 5 families with large number of Mendelian errors
 
 fam.rm<-as.character(mend.err.sorted[1:5,1])
 fam.rm
 
-#Remove families with large number of Mendelian errors from PED
+#A. Remove families with large number of Mendelian errors from PED
 filepath.ped<-"/users/lgai/8q24_project/data/processed_data/gmkf_euro_completetrios_07_01_2019.txt"
 ped <- read.table(filepath.ped,header=TRUE)
 dim(ped)
@@ -361,17 +356,26 @@ new.ped <- ped %>%
 filepath.new.ped<-"/users/lgai/8q24_project/data/processed_data/gmkf_euro_completetrios_mend_err_removed_07_12_2019.txt"
 write.table(new.ped, filepath.new.ped, sep=" ", col.names = TRUE, row.names = FALSE,quote = FALSE)
 
-#Remove families with large number of Mendelian errors from VCF
+#B. Remove families with large number of Mendelian errors from VCF
 
-#TODO: Check to see if this is the correct way to do it
+pids.to.keep <- ped %>%
+        filter(!pid %in% pid.rm$pid) %>%
+        select(pid) %>%
+        lapply(as.character) %>%
+        unlist
+
 filepath.formatted.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.07_1_19.phased.formatted.vcf"
 hg.assembly<-"hg19"
-vcf <- readVcf(filepath.formatted.vcf, hg.assembly)
+vcf <- readVcf(filepath.formatted.vcf, hg.assembly, param = ScanVcfParam(sample = pids.to.keep))
 
-removed.geno <-geno(vcf)$GT[, -colnames(geno(vcf)$GT) %in% pid.rm$pid ]
-geno(vcf)$GT <- removed.geno
+#Checks
+geno<-geno(vcf)$GT
+samp<-colnames(geno)
+samp[1:5]
 
-filepath.mend.err.rm.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.phased.formatted.mend.err.rm.07_15_19.vcf"
+dim(geno(vcf)$GT)
+
+filepath.mend.err.rm.vcf<-"/users/lgai/8q24_project/data/processed_data/vcfs/8q24.cleaned.phased.formatted.mend.err.rm.07_23_19.vcf"
 hg.assembly<-"hg19"
 writeVcf(vcf,filepath.mend.err.rm.vcf)
 
