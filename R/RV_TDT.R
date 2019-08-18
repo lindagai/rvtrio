@@ -56,12 +56,12 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
                 #Get genotypes and SNP names
                 #TODO: Is the as.data.frame necessary?
                 geno<-geno(vcf)$GT
-                snps<-as.data.frame(names(geno))
-                
+                #snps<-as.data.frame(names(geno))
+                snps<-as.data.frame(colnames(geno))
                 rm(vcf)
 
                 #Ensure pids in PED file are in the same order as in GENO/TPED
-                names(snps)<-"pids"
+                colnames(snps)<-"pids"
                 ped<-dplyr::left_join(ped,snps, by=c("pid" ="pids"))
                 tped<-.getTPED(vcf.geno = geno)
         } else {
@@ -130,7 +130,7 @@ RV_TDT<-function(plink.ped=NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir, window.
         results.df<-as.data.frame(matrix(data=NA,nrow=n.windows, ncol=10))
         colnames(results.df)<-c(
         		"gene.name",
-                "CMC.Analytical","BRV.Haplo","CMC.Haplo","VT.BRV.Haplo","VT.CMC.Haplo","WSS.Haplo",
+               "CMC.Analytical","BRV.Haplo","CMC.Haplo","VT.BRV.Haplo","VT.CMC.Haplo","WSS.Haplo",
                 "start.pos","mid.window.pos","end.pos"
         )
 
