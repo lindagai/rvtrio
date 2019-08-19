@@ -26,6 +26,7 @@
 #' @return results data frame containing results from RV-TDT
 
 #' @importFrom VariantAnnotation start geno rowRanges
+#' @import splitstackshape
 
 #' @export
 #'
