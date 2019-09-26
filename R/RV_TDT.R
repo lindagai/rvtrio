@@ -74,6 +74,8 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 	    #.checkInputs(vcf, vcf.ped, rv.tdt.dir)
         rvtrio.dir <- file.path(.libPaths(),"rvtrio")
         setwd(rvtrio.dir)
+        data.dir <-"./data"
+        dir.create(file.path(data.dir), showWarnings = FALSE)
         
 }
 
