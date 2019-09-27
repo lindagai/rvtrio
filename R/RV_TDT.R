@@ -24,9 +24,9 @@
 
 #' @return results data frame containing results from RV-TDT
 
-#' @importFrom VariantAnnotation start geno rowRanges
-#' @import splitstackshape
-
+#' @import VariantAnnotation dplyr
+#' @importFrom splitstackshape cSplit
+NULL
 #' @export
 #'
 #' @examples RV_TDT(filepath.vcf, filepath.ped)
