@@ -26,7 +26,6 @@
 
 #' @import VariantAnnotation dplyr
 #' @importFrom splitstackshape cSplit
-NULL
 #' @export
 #'
 #' @examples RV_TDT(filepath.vcf, filepath.ped)
