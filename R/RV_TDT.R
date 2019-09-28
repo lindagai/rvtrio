@@ -24,7 +24,7 @@
 
 #' @return results data frame containing results from RV-TDT
 
-#' @import VariantAnnotation cSplit
+#' @import VariantAnnotation
 #' @export
 #'
 #' @examples RV_TDT(filepath.vcf, filepath.ped)
