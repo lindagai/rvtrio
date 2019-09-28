@@ -25,7 +25,6 @@
 #' @return results data frame containing results from RV-TDT
 
 #' @import VariantAnnotation
-#' @importFrom splitstackshape cSplit
 #' @export
 #'
 #' @examples RV_TDT(filepath.vcf, filepath.ped)
@@ -117,13 +116,14 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
         n.samples.vcf <- ncol(geno(vcf)$GT)
         n.samples.ped <- nrow(ped)
         vcf.ids <- colnames(geno(vcf)$GT)
-        	if(n.samples.vcf! = n.samples.ped) {
+        
+        	if(n.samples.vcf != n.samples.ped) {
                 stop("The VCF and the PED have a different number of samples.")
         } else {
-        	if !(any(vcf.ids %in% ped$pid)) {
+        	if(!any(vcf.ids %in% ped$pid)) {
         		stop("The VCF has samples that are not present in the PED.")
         	}
-        	if !(any(ped$pid %in% vcf.ids )) {
+        	if(!any(ped$pid %in% vcf.ids)) {
         		stop("The PED has samples that are not present in the VCF.")
         	}
         }
