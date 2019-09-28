@@ -25,6 +25,7 @@
 #' @return results data frame containing results from RV-TDT
 
 #' @import VariantAnnotation
+#' @importFrom splitstackshape cSplit
 #' @export
 #'
 #' @examples RV_TDT(filepath.vcf, filepath.ped)
