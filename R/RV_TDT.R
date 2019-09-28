@@ -69,7 +69,7 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 .intializeEnv <- function(vcf, vcf.ped, rv.tdt.dir) {
 	
-	    #.checkInputs(vcf, vcf.ped, rv.tdt.dir)
+	    .checkInputs(vcf, vcf.ped, rv.tdt.dir)
         rvtrio.dir <- file.path(.libPaths(),"rvtrio")
         setwd(rvtrio.dir)
         data.dir <-"./data"
@@ -101,18 +101,35 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
         }
         
         ### CHECK VCF.PED
-        if(!all(c("famid", "pid", "fatid", "motid") %in% colnames(ped)))
-                stop("ped must contain columns called famid, pid, fatid, and motid comprising \n",
-                     "the family ID, the personal ID as well as the IDs of the father and the mother.")
+        if(!identical(c( "pid", "famid", "fatid", "motid", "sex", "affected"), colnames(ped)))
+                stop("PED must contain the columns  pid, famid, fatid, motid, sex, and affected comprising \n",
+                     "the personal ID, family ID, father ID, mother ID, \n", "sex (1 for male, 0 for female), and case(1)/control(0).")
         
         ids.kid1 <- ped$fatid != 0
         ids.kid2 <- ped$motid != 0
+        
         if(any(ids.kid1 != ids.kid2))
                 stop("fatid and motid must both be either zero or non-zero.")
-                
-        ### CHECK VCF.PED
+               
+        
+        ### CHECK VCF AND VCF.PED
+        n.samples.vcf <- ncol(geno(vcf)$GT)
+        n.samples.ped <- nrow(ped)
+        vcf.ids <- colnames(geno(vcf)$GT)
+        	if(n.samples.vcf! = n.samples.ped) {
+                stop("The VCF and the PED have a different number of samples.")
+        } else {
+        	if !(any(vcf.ids %in% ped$pid)) {
+        		stop("The VCF has samples that are not present in the PED.")
+        	}
+        	if !(any(ped$pid %in% vcf.ids )) {
+        		stop("The PED has samples that are not present in the VCF.")
+        	}
+        }
+        
+        ### CHECK rv.tdt.dir
         if(!file.exists(rv.tdt.dir)) {
-                stop("rv.tdt.dir does not exist. Did you give the correct path to RV-TDT?")
+                stop("Filepath given to RV-TDT does not exist.  \n Did you give the correct path to RV-TDT?")
         }
 }
 
