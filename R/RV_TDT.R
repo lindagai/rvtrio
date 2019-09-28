@@ -24,7 +24,7 @@
 
 #' @return results data frame containing results from RV-TDT
 
-#' @import VariantAnnotation dplyr cSplit
+#' @import VariantAnnotation cSplit
 #' @export
 #'
 #' @examples RV_TDT(filepath.vcf, filepath.ped)
@@ -333,9 +333,9 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 .getWindowPos <- function(start.index,mid.index,end.index,snp.pos.df){
         
-        start.pos <-snp.pos.df$pos[start.index] %>% as.character %>% as.numeric
-        mid.pos <- snp.pos.df$pos[start.index] %>% as.character %>% as.numeric
-        end.pos <- snp.pos.df$pos[end.index] %>% as.character  %>% as.numeric
+        start.pos <- as.numeric(as.character(snp.pos.df$pos[start.index]))
+        mid.pos <- as.numeric(as.character(snp.pos.df$pos[start.index]))
+        end.pos <- as.numeric(as.character(snp.pos.df$pos[end.index]))
         pos.info <- c(start.pos, mid.pos, end.pos)
         return(pos.info)
         
