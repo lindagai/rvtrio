@@ -142,8 +142,8 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 .get.snp.pos.df<- function(vcf) {
         snp.pos.df <- as.data.frame(cbind(names(vcf),
-                                          VariantAnnotation::start(
-                                                  VariantAnnotation::rowRanges(vcf)
+                                          start(
+                                                  rowRanges(vcf)
                                                   )
                                           )
                                     )
