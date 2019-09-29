@@ -1,13 +1,18 @@
 Package: rvtrio
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Rare Variant Transmission Disquilibrium Test for case-parent trios
 Version: 0.1.0
 Author: Linda Gai
-Maintainer: The package maintainer <yourself@somewhere.net>
+Maintainer: The package maintainer <lindagai@jhu.edu>
 Description: Functions for rare variant detection in case-parent trios
     Use four spaces when indenting paragraphs within the Description.
-Depends: VariantAnnotation
-License: MIT + file LICENSE
+Depends: VariantAnnotation,
+			dplyr,
+			splitstackshape,
+			methods, 
+			stats,
+			utils
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.1

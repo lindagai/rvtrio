@@ -5,17 +5,16 @@
 \title{Calculating RV-TDT statistic for user-defined windows
 `RV_TDT()` returns a data frame containing the RV_TDT statistic for a VCF or PLINK ped file. Note that RV_TDT only works for Linux and Mac OS X.}
 \usage{
-RV_TDT(plink.ped = NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir,
-  window.size = 0, window.type = "M", adapt = 500, alpha = 1e-05,
-  permut = 2000, lower_cutoff = 0, upper_cutoff = 100,
-  minVariants = 3, maxMissRatio = 1)
+RV_TDT(vcf, vcf.ped, rv.tdt.dir, window.size = 0, window.type = "M",
+  adapt = 500, alpha = 1e-05, permut = 2000, lower_cutoff = 0,
+  upper_cutoff = 100, minVariants = 3, maxMissRatio = 1)
 }
 \arguments{
-\item{plink.ped}{PLINK ped file}
-
 \item{vcf}{vcf file}
 
 \item{vcf.ped}{data frame containing pedigree information for the VCF}
+
+\item{rv.tdt.dir}{filepath to VCF}
 
 \item{window.size}{size of window in number of markers}
 
@@ -34,8 +33,6 @@ RV_TDT(plink.ped = NULL, vcf = NULL, vcf.ped = NULL, rv.tdt.dir,
 \item{minVariants}{The minimum number of variant sites for a gene. Genes with variant site number less than minVariants will be excluded from analysis (after check missing);}
 
 \item{maxMissRatio}{The max missing ratio allowed for a variant. The variants with missing ratio greater than maxMissRatio will be excluded from analysis. In this example, we generated the genetic data file without any missing genotypes, so /--maxMissRatio 1/ is used here.}
-
-\item{param}{parameters for RV-TDT}
 }
 \value{
 results data frame containing results from RV-TDT
@@ -43,9 +40,4 @@ results data frame containing results from RV-TDT
 \description{
 Calculating RV-TDT statistic for user-defined windows
 `RV_TDT()` returns a data frame containing the RV_TDT statistic for a VCF or PLINK ped file. Note that RV_TDT only works for Linux and Mac OS X.
-}
-\examples{
-RV_TDT(filepath.vcf, filepath.ped)
-RV_TDT(filepath.vcf, filepath.ped, window.size=10, window.type="M")
-
 }

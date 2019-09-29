@@ -2,3 +2,9 @@
 
 export(RV_TDT)
 import(VariantAnnotation)
+import(dplyr)
+importFrom(methods,is)
+importFrom(splitstackshape,cSplit)
+importFrom(utils,head)
+importFrom(utils,read.table)
+importFrom(utils,write.table)

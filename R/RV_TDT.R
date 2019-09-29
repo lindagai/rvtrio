@@ -3,10 +3,14 @@
 #' `RV_TDT()` returns a data frame containing the RV_TDT statistic for a VCF or PLINK ped file. Note that RV_TDT only works for Linux and Mac OS X.
 
 #' @param vcf vcf file
+
 #' @param vcf.ped data frame containing pedigree information for the VCF
+
+#' @param rv.tdt.dir filepath to VCF
+
 #' @param window.type type of window, either number of markers ("M") or width of kilobase interval ("K") (doesn't work yet)
+
 #' @param window.size size of window in number of markers
-#' @param param parameters for RV-TDT
 
 #' @param adapt To reduce computational time, adaptive permutation is used in /rvTDT/. Every /$adapt/ permutations (default: 500 permutations), the program will check if we should keep doing permutation (which means this gene looks promising to reach the desired alpha level), or we should give up on this gene (which means this gene will not reach the desired alpha level based on the permutations we have done so far, or we have done enough permutations)
 
@@ -24,11 +28,11 @@
 
 #' @return results data frame containing results from RV-TDT
 
-#' @import VariantAnnotation splitstackshape
-#' @export
-#'
-#' @examples RV_TDT(filepath.vcf, filepath.ped)
-#' @examples RV_TDT(filepath.vcf, filepath.ped, window.size=10, window.type="M")
+#' @import VariantAnnotation dplyr
+#' @importFrom splitstackshape cSplit
+#' @importFrom methods is
+#' @importFrom utils head read.table write.table
+
 #'
 #' @export
 #'
@@ -137,9 +141,12 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 ########################################################
 
 .get.snp.pos.df<- function(vcf) {
-        
-        snp.pos.df <- as.data.frame(cbind(names(vcf), 
-                                          start(rowRanges(vcf))))
+        snp.pos.df <- as.data.frame(cbind(names(vcf),
+                                          VariantAnnotation::start(
+                                                  VariantAnnotation::rowRanges(vcf)
+                                                  )
+                                          )
+                                    )
         colnames(snp.pos.df) <- c("snp.name","pos")
         return(snp.pos.df)
         
