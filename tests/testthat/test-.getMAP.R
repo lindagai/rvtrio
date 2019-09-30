@@ -3,8 +3,8 @@ context("MAP dimensions and columns are correct")
 test_that("Dimensions are correct", {
         #Cols: 1. Gene 2. VarID 3. MAF
         #Rows: Var under analysis
-        expect_equal(nrow(map),nrow(vcf.geno))
-        expect_equal(ncol(map),3)
+        expect_equal(nrow(map), nrow(vcf.geno))
+        expect_equal(ncol(map), 3)
 })
 
 #TODO: should MAP elements be numeric or char? may need to remove as.vector

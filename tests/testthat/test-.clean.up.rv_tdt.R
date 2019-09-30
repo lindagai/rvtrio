@@ -1,9 +1,17 @@
 context("All files used to run RV-TDT are deleted after run")
 
-test_that("Check", {
-        # #Check whether the scratch data directory has been deleted
-        # expect_false(file.exists(file.path(system.file("data", package="rvtrio"), "8q24.cleaned.10snps.vcf")))
-        # #Check whether the tped/map/pval files have been deleted
-        # filepath.pval<-paste0("'",currwd,"/NA_pval/NA.pval","'")
-        # filepath.results<-paste0("'",currwd,"/NA_rvTDT/NA.rvTDT","'")
+filepath.to.RV_TDT <- "/Users/lindagai 1/Documents/classes/4th year/Research/rv-tdt-master/rvTDT"
+RV_TDT.results <- RV_TDT(vcf=vcf, vcf.ped = ped,
+                         rv.tdt.dir = filepath.to.RV_TDT)
+
+test_that("Check whether the input_files directory has been deleted", {
+        expect_false(file.exists(file.path(.libPaths(),"rvtrio", "data","input_files")
+                                 )
+        )
+})
+
+test_that("Check whether the results directory has been deleted", {
+        expect_false(file.exists(file.path(.libPaths(),"rvtrio", "data","results")
+                                 )
+        )
 })

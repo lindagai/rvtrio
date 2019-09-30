@@ -73,7 +73,7 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 .intializeEnv <- function(vcf, vcf.ped, rv.tdt.dir) {
 	
-	    #.checkInputs(vcf, vcf.ped, rv.tdt.dir)
+	    .checkInputs(vcf, vcf.ped, rv.tdt.dir)
         rvtrio.dir <- file.path(.libPaths(),"rvtrio")
         setwd(rvtrio.dir)
         data.dir <-"./data"
@@ -83,65 +83,92 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 ########################################################
 
-# Helper Helper Function - .intializeEnv
+# Helper Helper Functions - .intializeEnv
 
 ########################################################
 
 .checkInputs <- function(vcf, vcf.ped, rv.tdt.dir){
-        
-        ### CHECK VCF
+
+        .checkVCF(vcf)
+        .checkPED(vcf.ped)
+        .checkVCFandPED(vcf, vcf.ped)
+        .checkFilepathToRV_TDT(rv.tdt.dir)
+
+}
+
+##################################
+
+.checkVCF <- function(vcf){
         if(!is(vcf, "CollapsedVCF")) {
                 stop("VCF must be an object of class collapsedVCF")
-        } else if(is(vcf, "CollapsedVCF")){
-                vcf <- VariantAnnotation::geno(vcf)$GT
-                if(is.null(vcf))
-                        stop("VCF does not seem to contain the genotype data.")
         }
-        
+        else if(is(vcf, "CollapsedVCF")){
+                 vcf <- geno(vcf)$GT
+                 if(is.null(vcf))
+                         stop("VCF does not seem to contain the genotype data.")
+        }
+
         allowed.geno.values <- c("0|0", "0|1", "1|0", "1|1")
-        
-        if (sum(!(as.vector(geno(vcf)$GT) %in% allowed.geno.values)) > 0){
+        genotype.entries <- unique(as.vector(vcf))
+
+        if (sum(!(genotype.entries %in% allowed.geno.values)) > 0){
                 stop("Genotype entries must be of the format `0|0`, `0|1`, `1|0`, or `1|1`. Did you remember to phase the VCF?")
         }
-        
-        ### CHECK VCF.PED
-        if(!identical(c( "pid", "famid", "fatid", "motid", "sex", "affected"), colnames(ped)))
-                stop("PED must contain the columns  pid, famid, fatid, motid, sex, and affected comprising \n",
-                     "the personal ID, family ID, father ID, mother ID, \n", "sex (1 for male, 0 for female), and case(1)/control(0).")
-        
+}
+
+##################################
+
+.checkPED <- function(ped){
+        expected.cols.ped <- c("pid", "famid", "fatid", "motid", "sex", "affected")
+
+        if(!setequal(expected.cols.ped, colnames(ped))){
+                stop("PED must contain 6 columns named `pid`, `famid`, `fatid`, `motid`, `sex``, and `affected`. \n" ,
+                     "These correspond to the personal ID, family ID, father ID, mother ID, \n", "sex (1 for male, 0 for female), and case(1)/control(0).")
+        }
+
         ids.kid1 <- ped$fatid != 0
         ids.kid2 <- ped$motid != 0
-        
-        if(any(ids.kid1 != ids.kid2))
+
+        if(any(ids.kid1 != ids.kid2)){
                 stop("fatid and motid must both be either zero or non-zero.")
-               
-        
-        ### CHECK VCF AND VCF.PED
+        }
+
+}
+
+##################################
+
+.checkVCFandPED <- function(vcf, ped){
         n.samples.vcf <- ncol(geno(vcf)$GT)
         n.samples.ped <- nrow(ped)
         vcf.ids <- colnames(geno(vcf)$GT)
-        
-        	if(n.samples.vcf != n.samples.ped) {
+
+        if(n.samples.vcf != n.samples.ped) {
                 stop("The VCF and the PED have a different number of samples.")
         } else {
-        	if(!any(vcf.ids %in% ped$pid)) {
-        		stop("The VCF has samples that are not present in the PED.")
-        	}
-        	if(!any(ped$pid %in% vcf.ids)) {
-        		stop("The PED has samples that are not present in the VCF.")
-        	}
+                if(!any(vcf.ids %in% ped$pid)) {
+                        stop("The VCF has samples that are not present in the PED.")
+                }
+                if(!any(ped$pid %in% vcf.ids)) {
+                        stop("The PED has samples that are not present in the VCF.")
+                }
         }
-        
-        ### CHECK rv.tdt.dir
-        if(!file.exists(rv.tdt.dir)) {
+
+}
+
+##################################
+
+.checkFilepathToRV_TDT <- function(rv.tdt.dir){
+        if(!file_test("-f", rv.tdt.dir)) {
                 stop("Filepath given to RV-TDT does not exist.  \n Did you give the correct path to RV-TDT?")
         }
+
 }
 
 ########################################################
 
 .get.snp.pos.df<- function(vcf) {
-        snp.pos.df <- as.data.frame(cbind(names(vcf),
+	
+        snp.pos.df <- data.frame(cbind(names(vcf),
                                           start(
                                                   rowRanges(vcf)
                                                   )
@@ -155,8 +182,11 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 ############################
 
 .getPED <- function(ped, vcf){
+	
+	    ped <- ped %>% 
+	    		select("pid", "famid", "fatid", "motid", "sex", "affected")
 
-        pids <- as.data.frame(colnames(vcf))
+        pids <- data.frame(colnames(vcf))
         colnames(pids) <- "pids"
         ped <- dplyr::left_join(pids, ped, by=c("pids" ="pid")) 
         return(ped)
@@ -183,7 +213,7 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
         gene.id.vec <- rep(gene.id, n.snps)
         snps <- rownames(tped)
         mafs <- as.vector(rowMeans(tped))
-        map <- as.data.frame(cbind(gene.id.vec, snps, mafs),
+        map <- data.frame(cbind(gene.id.vec, snps, mafs),
                              stringsAsFactors=FALSE)
         return(map)
         
@@ -194,8 +224,11 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 .restoreEnv <- function(curr.wd){
 	
        .deletePED()
-        setwd(curr.wd)  
-        
+       .deleteInputDir()
+       .deleteResultsDir()
+        setwd(curr.wd) 
+       
+     
 }
 
 ########################################################
@@ -204,12 +237,32 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 ########################################################
 
-.deletePED <- function(vcf, vcf.ped, rv.tdt.dir){
+.deletePED <- function(){
 	
         data.dir <- file.path(.libPaths(),"rvtrio", "data","input_files")
         filepath.ped <- file.path(data.dir, "pedfile.ped")
         command <- paste0("rm ", filepath.ped)
         system(command)
+	
+}
+
+############################
+
+.deleteResultsDir <- function(){
+	
+        results.dir <- file.path(.libPaths(),"rvtrio","data","results")
+        delete.results.dir <- paste("rmdir", results.dir) 
+        system(delete.results.dir)
+	
+}
+
+############################
+
+.deleteInputDir <- function(){
+	
+        input.dir <- file.path(.libPaths(),"rvtrio","data","input_files")
+        delete.input.dir <- paste("rmdir", input.dir)
+        system(delete.input.dir)
 	
 }
 
@@ -227,7 +280,7 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
                 n.windows <- max(n.snps - window.size + 1,1)
         }
         
-        results.df <- as.data.frame(matrix(data=NA, nrow=n.windows, ncol=10))
+        results.df <- data.frame(matrix(data=NA, nrow=n.windows, ncol=10))
         colnames(results.df) <- c(
                 "gene.name",
                 "CMC.Analytical","BRV.Haplo","CMC.Haplo",
@@ -402,7 +455,8 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
         system(delete.input.files)
         
         ### DELETE OUTPUT FILES
-        results.dir <- paste0("./data/results")      
+        #results.dir <- paste0("./data/results")  
+        results.dir <- file.path(.libPaths(),"rvtrio","data","results")    
         
         filepath.pval <- file.path(results.dir,
                                    "NA_pval", "NA.pval")
@@ -410,11 +464,11 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
                                       "NA_rvTDT", "NA.rvTDT")
         delete.output.files <- paste("rm", filepath.pval, filepath.results)
         system(delete.output.files)
-        
+
         ### DELETE OUTPUT DIRECTORIES
         dir.pval <- file.path(results.dir, "NA_pval")
         dir.results <- file.path(results.dir, "NA_rvTDT")
         delete.output.dir <- paste("rmdir", dir.pval, dir.results)
-        system(delete.output.dir)
+        system(delete.output.dir) 
         
 }
