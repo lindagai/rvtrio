@@ -16,6 +16,9 @@ sm.vcf.fp <- file.path(system.file("data", package="rvtrio"), "hg38.vcf")
 hg.assembly <- "hg38"
 sm.vcf <- VariantAnnotation::readVcf(sm.vcf.fp, hg.assembly)
 
+fp.ped <- file.path(system.file("data", package="rvtrio"), "hg38.ped.txt")
+ped <- read.table(fp.ped,header=TRUE) 
+
 ################################################################################
 
 #2. Load RV-TDT input functions (MAP, TPED, and PED)
