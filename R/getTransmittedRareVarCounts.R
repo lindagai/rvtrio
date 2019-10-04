@@ -4,12 +4,13 @@
 
 ################################################################################
 
-getTransmittedRareVarCounts <- function(vcf, ped){
+getTransmittedRareVarCounts <- function(vcf, ped, cutoff = 0.01){
 	
+	snp.pos.df <- .getPositionsOfSnps(vcf)
 	vcf <- geno(vcf)$GT	
 	mafs <- .getMAFs(vcf)
-	rare.var.geno <- .getRareVarGeno(mafs)
-	transmitted.rare.var.ct <- .getTransmittedRareVar(rare.var.geno, ped)
+	rare.var.geno <- .getRareVarGeno(vcf, mafs, cutoff)
+	transmitted.rare.var.ct <- .getTransmittedRareVar(rare.var.geno, ped, snp.pos.df)
 	return(transmitted.rare.var.ct)
 	
 }
@@ -61,7 +62,7 @@ getTransmittedRareVarCounts <- function(vcf, ped){
 
 ################################################################################
 
-.getTransmittedRareVar <- function(rare.var.geno, ped){
+.getTransmittedRareVar <- function(rare.var.geno, ped, snp.pos.df){
         
         #Convert rare.var.geno to allele counts - OK
         rare.var.geno <- .getGenotypeMatrix(rare.var.geno)
@@ -72,12 +73,11 @@ getTransmittedRareVarCounts <- function(vcf, ped){
         
         #Allocate table  - OK
         rv.in.children <- rownames(child.with.RV.geno)
-        rare.snp.table <- as.data.frame(rep(NA,length(rv.in.children)
-        )
-        )
+        rare.snp.table <- data.frame(matrix(ncol=2, nrow=length(rv.in.children)),
+        stringsAsFactors=FALSE)
         
-        rownames(rare.snp.table) <- rv.in.children
-        colnames(rare.snp.table) <- "trans.ct"
+        colnames(rare.snp.table) <- c("rare.snp", "trans.ct")
+        rare.snp.table$rare.snp <- rv.in.children
         
         for (i in 1:length(rv.in.children)){
                 #Check if the as.character is necessary
@@ -110,10 +110,11 @@ getTransmittedRareVarCounts <- function(vcf, ped){
                 }
                 
                 n.trans.SNPs
-                rare.snp.table[i,] <- n.trans.SNPs      
+                rare.snp.table[i,2] <- n.trans.SNPs      
                 
         }
         
+        rare.snp.table <- left_join(rare.snp.table, snp.pos.df, by = c("rare.snp" = "snp"))
         return(rare.snp.table)
 }
 
@@ -134,5 +135,17 @@ getTransmittedRareVarCounts <- function(vcf, ped){
         mafs.in.children <- .getMAFs(child.geno)
         children.with.RV.geno <- child.geno[mafs.in.children > 0, ]
         return(children.with.RV.geno)
+        
+}
+
+################################################################################
+
+.getPositionsOfSnps <- function(vcf){
+        
+        #Add SNP name and position to DF of results
+        snp <- names(vcf)
+        pos <- start(rowRanges(vcf))
+        snp.pos.df <- data.frame(snp, pos, stringsAsFactors = FALSE)
+        return(snp.pos.df)
         
 }
