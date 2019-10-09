@@ -28,10 +28,10 @@
 
 #' @return results data frame containing results from RV-TDT
 
-#' @import VariantAnnotation dplyr
+#' @import dplyr VariantAnnotation 
 #' @importFrom splitstackshape cSplit
 #' @importFrom methods is
-#' @importFrom utils head read.table write.table
+#' @importFrom utils head read.table write.table file_test
 
 #'
 #' @export

@@ -1,6 +1,22 @@
-################################################################################
+#' Get counts of the numberof times each rare variants transmitted from parents to offspring in the data set
 
-# Get transmitted RV counts
+#' `getTransmittedRareVarCounts()` returns a data frame containing the count of rare variants =transmitted from the parents to the affected offspring. vcf, ped, cutoff = 0.01
+
+#' @param vcf vcf file
+
+#' @param ped data frame containing pedigree information for the VCF
+
+#' @param cutoff The MAF cutoff to determine which variants are "rare" (default is 0.01), for which transmission counts will calculated.  
+
+#' @return results data frame containing the names of the SNVs that are considered rare, the number of times the rare variant was transmitted from parents to the affected offspring in the dataset, and the genomic position of the rare SNPs.
+
+#' @import dplyr VariantAnnotation
+#' @importFrom methods is
+#' @importFrom utils head read.table write.table type.convert 
+
+#'
+#' @export
+#'
 
 ################################################################################
 
@@ -92,10 +108,10 @@ getTransmittedRareVarCounts <- function(vcf, ped, cutoff = 0.01){
                         curr.child <- children.with.this.rv[j]
                         child.rv.ct <- child.with.RV.geno[curr.rv, curr.child]
                         child.rv.ct
-                        
+                                             
                         parents.of.children.with.this.rv <- ped %>%
-                                filter(pid %in% children.with.this.rv) %>%
-                                select(fatid, motid)
+                                filter_(~pid %in% children.with.this.rv) %>%
+                                select_(.dots = c('fatid', 'motid'))
                         
                         fatid <- as.character(parents.of.children.with.this.rv$fatid)
                         motid <- as.character(parents.of.children.with.this.rv$motid)
@@ -122,11 +138,11 @@ getTransmittedRareVarCounts <- function(vcf, ped, cutoff = 0.01){
 ################################################################################
 
 .getRareVarInChildren <- function(rare.var.geno, ped){
-        
+       
         child.pids <- ped %>%
-                filter(fatid!=0) %>%
-                filter(motid!=0) %>%
-                select(pid) %>%
+                filter_(~fatid!=0) %>%
+                filter_(~motid!=0) %>%
+                select_(.dots = c("pid")) %>%
                 sapply(as.character) %>%
                 as.vector
         
