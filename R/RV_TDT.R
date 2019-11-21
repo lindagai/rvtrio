@@ -28,7 +28,7 @@
 
 #' @return results data frame containing results from RV-TDT
 
-#' @import dplyr VariantAnnotation 
+#' @import dplyr VariantAnnotation
 #' @importFrom splitstackshape cSplit
 #' @importFrom methods is
 #' @importFrom utils head read.table write.table file_test
@@ -40,27 +40,27 @@
 ########################################################
 
 RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", adapt = 500, alpha = 0.00001, permut = 2000, lower_cutoff = 0, upper_cutoff = 100, minVariants = 3, maxMissRatio = 1){
-        
+
         curr.wd <- getwd()
-        
+
         .intializeEnv(vcf, vcf.ped, rv.tdt.dir)
-        
+
         parameters <- c(adapt, alpha, permut,lower_cutoff,
                         upper_cutoff, minVariants, maxMissRatio)
 
-        snp.pos.df <- .get.snp.pos.df(vcf) 
-        
+        snp.pos.df <- .get.snp.pos.df(vcf)
+
 		vcf <- geno(vcf)$GT
-		
+
         tped <- .getTPED(vcf)
         ped <- .getPED(ped, vcf)
         map <- .getMAP(tped)
-        
+
         results <- .runRV_TDT(ped, map, tped, rv.tdt.dir,
                               window.size, snp.pos.df, param = parameters)
-       
-       .restoreEnv(curr.wd)     
-        
+
+       .restoreEnv(curr.wd)
+
         return(results)
 }
 
@@ -72,13 +72,13 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 
 .intializeEnv <- function(vcf, vcf.ped, rv.tdt.dir) {
-	
+
 	    .checkInputs(vcf, vcf.ped, rv.tdt.dir)
         rvtrio.dir <- file.path(.libPaths(),"rvtrio")
         setwd(rvtrio.dir)
         data.dir <-"./data"
         dir.create(file.path(data.dir), showWarnings = FALSE)
-        
+
 }
 
 ########################################################
@@ -167,7 +167,7 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 ########################################################
 
 .get.snp.pos.df<- function(vcf) {
-	
+
         snp.pos.df <- data.frame(cbind(names(vcf),
                                           start(
                                                   rowRanges(vcf)
@@ -176,38 +176,38 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
                                     )
         colnames(snp.pos.df) <- c("snp.name","pos")
         return(snp.pos.df)
-        
+
 }
 
 ############################
 
 .getPED <- function(ped, vcf){
-	
-	    ped <- ped %>% 
+
+	    ped <- ped %>%
 	    		select("pid", "famid", "fatid", "motid", "sex", "affected")
 
         pids <- data.frame(colnames(vcf))
         colnames(pids) <- "pids"
-        ped <- dplyr::left_join(pids, ped, by=c("pids" ="pid")) 
+        ped <- dplyr::left_join(pids, ped, by=c("pids" ="pid"))
         return(ped)
-        
+
 }
 
 ############################
 
 .getTPED <- function(vcf.geno){
-        
-        tped <- as.matrix(splitstackshape::cSplit(vcf.geno, 
+
+        tped <- as.matrix(splitstackshape::cSplit(vcf.geno,
                                                   colnames(vcf.geno), c("|")))
         rownames(tped) <-rownames(vcf.geno)
         return(tped)
-        
+
 }
 
 ############################
 
 .getMAP <- function(tped){
-        
+
         gene.id <- "NA"
         n.snps <- nrow(tped)
         gene.id.vec <- rep(gene.id, n.snps)
@@ -216,19 +216,19 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
         map <- data.frame(cbind(gene.id.vec, snps, mafs),
                              stringsAsFactors=FALSE)
         return(map)
-        
+
 }
 
 ############################
 
 .restoreEnv <- function(curr.wd){
-	
+
        .deletePED()
-       .deleteInputDir()
+       # .deleteInputDir()
        .deleteResultsDir()
-        setwd(curr.wd) 
-       
-     
+        setwd(curr.wd)
+
+
 }
 
 ########################################################
@@ -238,40 +238,40 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 ########################################################
 
 .deletePED <- function(){
-	
+
         data.dir <- file.path(.libPaths(),"rvtrio", "data","input_files")
         filepath.ped <- file.path(data.dir, "pedfile.ped")
         command <- paste0("rm ", filepath.ped)
         system(command)
-	
+
 }
 
 ############################
 
 .deleteResultsDir <- function(){
-	
+
         results.dir <- file.path(.libPaths(),"rvtrio","data","results")
-        delete.results.dir <- paste("rmdir", results.dir) 
+        delete.results.dir <- paste("rmdir", results.dir)
         system(delete.results.dir)
-	
+
 }
 
 ############################
 
 .deleteInputDir <- function(){
-	
+
         input.dir <- file.path(.libPaths(),"rvtrio","data","input_files")
         delete.input.dir <- paste("rmdir", input.dir)
         system(delete.input.dir)
-	
+
 }
 
 ############################
 
 .runRV_TDT <- function(ped, map, tped, rv.tdt.dir, window.size=0, snp.pos.df, param, window.type  = "M"){
-        
+
         n.snps<- nrow(map)
-        
+
         #return rv_tdt results as df
         if (window.size == 0){
                 n.windows <- 1
@@ -279,7 +279,7 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
         } else {
                 n.windows <- max(n.snps - window.size + 1,1)
         }
-        
+
         results.df <- data.frame(matrix(data=NA, nrow=n.windows, ncol=10))
         colnames(results.df) <- c(
                 "gene.name",
@@ -287,7 +287,7 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
                 "VT.BRV.Haplo","VT.CMC.Haplo","WSS.Haplo",
                 "start.pos","mid.window.pos","end.pos"
         )
-        
+
         for (i in (1:n.windows)){
                 start.index <- i
                 end.index <- min(i + window.size-1, n.snps)
@@ -302,14 +302,14 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
                                           end.index, snp.pos.df)
                 results.df[i,1:7] <- curr.window.result
                 results.df[i,8:10] <- pos.info
-                
+
         }
-        
+
         #Remove gene.id column, which is not applicable here
         results.df <- results.df[, -1]
-        
+
         return(results.df)
-        
+
 }
 
 ########################################################
@@ -319,34 +319,34 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 ########################################################
 
 .getInputFilesForWindow <- function(ped, map, tped, window.type, start.index, end.index, i){
-        
+
         data.dir <-"./data/input_files/"
-        
+
         dir.create(file.path(data.dir), showWarnings = FALSE)
-        
+
         file.param <- paste0("window",i,".",
                              start.index, "-", end.index, window.type)
-        
+
         filepath.map.new <- paste0(data.dir, file.param, ".map")
         filepath.tped.new <- paste0(data.dir, file.param, ".tped")
         filepath.ped <- paste0(data.dir, "pedfile.ped")
-        
+
         sm.map <- map[start.index:end.index,]
         sm.tped <- tped[start.index:end.index,]
-        
-        write.table(sm.map,filepath.map.new, sep="\t", 
+
+        write.table(sm.map,filepath.map.new, sep="\t",
                     col.names=FALSE, row.names = FALSE, quote = FALSE)
-        write.table(sm.tped,filepath.tped.new, sep="\t", 
+        write.table(sm.tped,filepath.tped.new, sep="\t",
                     col.names=FALSE, row.names = TRUE, quote = FALSE)
-        
+
         if (i==1){
                 head(ped)
-                write.table(ped, filepath.ped, sep="\t", 
+                write.table(ped, filepath.ped, sep="\t",
                             col.names=FALSE, row.names = FALSE, quote = FALSE)
         }
-        
+
         filepaths <- c(filepath.tped.new, filepath.ped, filepath.map.new)
-        
+
 }
 
 ############################
@@ -363,33 +363,33 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 ############################
 
 .calculateRV_TDTOnWindow <- function(input.filepaths, rv.tdt.dir, param){
-        
+
         adapt <- param[1]
-        
+
         alpha <- param[2]
-        
+
         permut <- param[3]
-        
+
         lower_cutoff <- param[4]
-        
+
         upper_cutoff <- param[5]
-        
+
         minVariants <- param[6]
-        
-        maxMissRatio <- param[7]      
-        
+
+        maxMissRatio <- param[7]
+
         #NOTE: Do *NOT* attempt to replacte paste0 with file.path
-		#file.path will break if there are spaces in the filepaths	
+		#file.path will break if there are spaces in the filepaths
         filepath.tped <- paste0("'", input.filepaths[1], "'")
         filepath.phen <- paste0("'", input.filepaths[2], "'")
         filepath.map <- paste0("'", input.filepaths[3], "'")
         rv.tdt.dir <- paste0("'", rv.tdt.dir, "'")
-      
-        results.dir <- "./data/results/"  
-        dir.create(file.path(results.dir), showWarnings = FALSE)      
+
+        results.dir <- "./data/results/"
+        dir.create(file.path(results.dir), showWarnings = FALSE)
         gene.name <- "NA"
         rv.tdt.results.dir <- paste0(results.dir, gene.name)
-        
+
         command<-paste0(rv.tdt.dir, " ", rv.tdt.results.dir,
                         " -G ", filepath.tped,
                         " -P ", filepath.phen,
@@ -402,21 +402,21 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
                         " --minVariants ", minVariants,
                         " --maxMissRatio ", maxMissRatio
         )
-        
+
         system(command)
-        
+
 }
 
 ############################
 
 .getWindowPos <- function(start.index,mid.index,end.index,snp.pos.df){
-        
+
         start.pos <- as.numeric(as.character(snp.pos.df$pos[start.index]))
         mid.pos <- as.numeric(as.character(snp.pos.df$pos[start.index]))
         end.pos <- as.numeric(as.character(snp.pos.df$pos[end.index]))
         pos.info <- c(start.pos, mid.pos, end.pos)
         return(pos.info)
-        
+
 }
 
 ########################################################
@@ -426,9 +426,9 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 ########################################################
 
 .extract.results <- function(){
-	
+
         gene.name<-"NA"
-        results.dir <- paste0("./data/results/")  
+        results.dir <- paste0("./data/results/")
         filepath.results <- paste0(results.dir, gene.name, "_pval/", gene.name, ".pval")
         filepath.results
         pval.df <- read.table(filepath.results, comment.char = "", header=TRUE)
@@ -440,24 +440,24 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 ############################
 
 .clean.up.rv_tdt <- function(input.filepaths){
-        
+
         ### DELETE INPUT FILES
         	#NOTE: Do *NOT* attempt to replacte paste0 with file.path
-		#file.path will break if there are spaces in the filepaths	
+		#file.path will break if there are spaces in the filepaths
         filepath.tped <- paste0("'", input.filepaths[1], "'")
         filepath.map <- paste0("'", input.filepaths[3], "'")
-        
+
         delete.input.files <- paste("rm",
                                     filepath.tped,
                                     filepath.map
         )
-        
+
         system(delete.input.files)
-        
+
         ### DELETE OUTPUT FILES
-        #results.dir <- paste0("./data/results")  
-        results.dir <- file.path(.libPaths(),"rvtrio","data","results")    
-        
+        #results.dir <- paste0("./data/results")
+        results.dir <- file.path(.libPaths(),"rvtrio","data","results")
+
         filepath.pval <- file.path(results.dir,
                                    "NA_pval", "NA.pval")
         filepath.results <- file.path(results.dir,
@@ -469,6 +469,6 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
         dir.pval <- file.path(results.dir, "NA_pval")
         dir.results <- file.path(results.dir, "NA_rvTDT")
         delete.output.dir <- paste("rmdir", dir.pval, dir.results)
-        system(delete.output.dir) 
-        
+        system(delete.output.dir)
+
 }
