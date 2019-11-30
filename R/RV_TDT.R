@@ -1,12 +1,12 @@
 #' Calculating RV-TDT statistic for user-defined windows
 
-#' `RV_TDT()` returns a data frame containing the RV_TDT statistic for a VCF or PLINK ped file. Note that RV_TDT only works for Linux and Mac OS X.
+#' `RV_TDT()` returns a data frame containing the RV_TDT statistic for a VCF file. Note that RV_TDT only works for Linux and Mac OS X.
 
 #' @param vcf vcf file
 
-#' @param vcf.ped data frame containing pedigree information for the VCF
+#' @param vcf. data frame containing pedigree information for the VCF
 
-#' @param rv.tdt.dir filepath to VCF
+#' @param filepath.RV_TDT filepath to RV-TDT program. Can be downloaded here: https://github.com/statgenetics/rv-tdt
 
 #' @param window.type type of window, either number of markers ("M") or width of kilobase interval ("K") (doesn't work yet)
 
@@ -37,18 +37,24 @@
 #' @export
 #'
 
+#' @examples
+#' 
+# RV_TDT.results <- rvtrio::RV_TDT(vcf=vcf, vcf.ped = ped, filepath.RV_TDT = filepath.to.RV_TDT)
+#' 
+# RV_TDT.results <- rvtrio::RV_TDT(vcf=vcf, vcf.ped = ped, filepath.RV_TDT = filepath.to.RV_TDT, window.size=0, window.type = "M")
+
 ########################################################
 
-RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", adapt = 500, alpha = 0.00001, permut = 2000, lower_cutoff = 0, upper_cutoff = 100, minVariants = 3, maxMissRatio = 1){
+RV_TDT <- function(vcf, vcf.ped, filepath.RV_TDT, window.size=0, window.type = "M", adapt = 500, alpha = 0.00001, permut = 2000, lower_cutoff = 0, upper_cutoff = 100, minVariants = 3, maxMissRatio = 1){
 
         curr.wd <- getwd()
 
-        .intializeEnv(vcf, vcf.ped, rv.tdt.dir)
+        .intializeEnv(vcf, vcf.ped, filepath.RV_TDT)
 
         parameters <- c(adapt, alpha, permut,lower_cutoff,
                         upper_cutoff, minVariants, maxMissRatio)
 
-        snp.pos.df <- .get.snp.pos.df(vcf)
+        snp.pos.df <- .getSnpPosDF(vcf)
 
 		vcf <- geno(vcf)$GT
 
@@ -56,7 +62,7 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
         ped <- .getPED(ped, vcf)
         map <- .getMAP(tped)
 
-        results <- .runRV_TDT(ped, map, tped, rv.tdt.dir,
+        results <- .runRV_TDT(ped, map, tped, filepath.RV_TDT,
                               window.size, snp.pos.df, param = parameters)
 
        .restoreEnv(curr.wd)
@@ -71,9 +77,9 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 ########################################################
 
 
-.intializeEnv <- function(vcf, vcf.ped, rv.tdt.dir) {
+.intializeEnv <- function(vcf, vcf.ped, filepath.RV_TDT) {
 
-	    .checkInputs(vcf, vcf.ped, rv.tdt.dir)
+	    .checkInputs(vcf, vcf.ped, filepath.RV_TDT)
         rvtrio.dir <- file.path(.libPaths(),"rvtrio")
         setwd(rvtrio.dir)
         data.dir <-"./data"
@@ -87,12 +93,12 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 ########################################################
 
-.checkInputs <- function(vcf, vcf.ped, rv.tdt.dir){
+.checkInputs <- function(vcf, vcf.ped, filepath.RV_TDT){
 
         .checkVCF(vcf)
         .checkPED(vcf.ped)
         .checkVCFandPED(vcf, vcf.ped)
-        .checkFilepathToRV_TDT(rv.tdt.dir)
+        .checkFilepathToRV_TDT(filepath.RV_TDT)
 
 }
 
@@ -119,6 +125,7 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 ##################################
 
 .checkPED <- function(ped){
+	
         expected.cols.ped <- c("pid", "famid", "fatid", "motid", "sex", "affected")
 
         if(!setequal(expected.cols.ped, colnames(ped))){
@@ -157,8 +164,8 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 ##################################
 
-.checkFilepathToRV_TDT <- function(rv.tdt.dir){
-        if(!file_test("-f", rv.tdt.dir)) {
+.checkFilepathToRV_TDT <- function(filepath.RV_TDT){
+        if(!file_test("-f", filepath.RV_TDT)) {
                 stop("Filepath given to RV-TDT does not exist.  \n Did you give the correct path to RV-TDT?")
         }
 
@@ -166,7 +173,7 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 ########################################################
 
-.get.snp.pos.df<- function(vcf) {
+.getSnpPosDF<- function(vcf) {
 
         snp.pos.df <- data.frame(cbind(names(vcf),
                                           start(
@@ -181,6 +188,17 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 ############################
 
+.getTPED <- function(vcf.geno){
+
+        tped <- as.matrix(splitstackshape::cSplit(vcf.geno,
+                                                  colnames(vcf.geno), c("|")))
+        rownames(tped) <-rownames(vcf.geno)
+        return(tped)
+
+}
+
+############################
+
 .getPED <- function(ped, vcf){
 
 	    ped <- ped %>%
@@ -190,17 +208,6 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
         colnames(pids) <- "pids"
         ped <- dplyr::left_join(pids, ped, by=c("pids" ="pid"))
         return(ped)
-
-}
-
-############################
-
-.getTPED <- function(vcf.geno){
-
-        tped <- as.matrix(splitstackshape::cSplit(vcf.geno,
-                                                  colnames(vcf.geno), c("|")))
-        rownames(tped) <-rownames(vcf.geno)
-        return(tped)
 
 }
 
@@ -268,7 +275,7 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 ############################
 
-.runRV_TDT <- function(ped, map, tped, rv.tdt.dir, window.size=0, snp.pos.df, param, window.type  = "M"){
+.runRV_TDT <- function(ped, map, tped, filepath.RV_TDT, window.size=0, snp.pos.df, param, window.type  = "M"){
 
         n.snps<- nrow(map)
 
@@ -297,7 +304,7 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
                                                            start.index, end.index,
                                                            i)
                 curr.window.result <- .runRV_TDTOnWindow(input.filepaths,
-                                                         rv.tdt.dir, param)
+                                                         filepath.RV_TDT, param)
                 pos.info <- .getWindowPos(start.index, mid.index,
                                           end.index, snp.pos.df)
                 results.df[i,1:7] <- curr.window.result
@@ -351,18 +358,18 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 ############################
 
-.runRV_TDTOnWindow <- function(input.filepaths, rv.tdt.dir,param){
+.runRV_TDTOnWindow <- function(input.filepaths, filepath.RV_TDT,param){
 
-        .calculateRV_TDTOnWindow(input.filepaths, rv.tdt.dir, param)
-        results <- .extract.results()
-        .clean.up.rv_tdt(input.filepaths)
+        .calculateRV_TDTOnWindow(input.filepaths, filepath.RV_TDT, param)
+        results <- .extractResults()
+        .cleanUpRV_TDT(input.filepaths)
         return(results)
 
 }
 
 ############################
 
-.calculateRV_TDTOnWindow <- function(input.filepaths, rv.tdt.dir, param){
+.calculateRV_TDTOnWindow <- function(input.filepaths, filepath.RV_TDT, param){
 
         adapt <- param[1]
 
@@ -383,14 +390,14 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
         filepath.tped <- paste0("'", input.filepaths[1], "'")
         filepath.phen <- paste0("'", input.filepaths[2], "'")
         filepath.map <- paste0("'", input.filepaths[3], "'")
-        rv.tdt.dir <- paste0("'", rv.tdt.dir, "'")
+        filepath.RV_TDT <- paste0("'", filepath.RV_TDT, "'")
 
         results.dir <- "./data/results/"
         dir.create(file.path(results.dir), showWarnings = FALSE)
         gene.name <- "NA"
         rv.tdt.results.dir <- paste0(results.dir, gene.name)
 
-        command<-paste0(rv.tdt.dir, " ", rv.tdt.results.dir,
+        command<-paste0(filepath.RV_TDT, " ", rv.tdt.results.dir,
                         " -G ", filepath.tped,
                         " -P ", filepath.phen,
                         " -M ", filepath.map,
@@ -425,7 +432,7 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 ########################################################
 
-.extract.results <- function(){
+.extractResults <- function(){
 
         gene.name<-"NA"
         results.dir <- paste0("./data/results/")
@@ -439,7 +446,7 @@ RV_TDT <- function(vcf, vcf.ped, rv.tdt.dir, window.size=0, window.type = "M", a
 
 ############################
 
-.clean.up.rv_tdt <- function(input.filepaths){
+.cleanUpRV_TDT <- function(input.filepaths){
 
         ### DELETE INPUT FILES
         	#NOTE: Do *NOT* attempt to replacte paste0 with file.path
