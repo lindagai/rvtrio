@@ -21,17 +21,17 @@
 #'
 #'
 #' @examples
-#' \donttest{fp.ped <- system.file("inst", "extdata", "hg38.ped.txt", package = "rvtrio")
+#'  system.file("extdata", "hg38.ped.txt", package = "rvtrio")
 #' ped <- read.table(fp.ped,header=TRUE)
 #' head(ped)
 #' 
-#' fp.vcf <- system.file("inst", "extdata", "hg38.vcf", package = "rvtrio")
+#' fp.vcf <- system.file("extdata", "hg38.vcf", package = "rvtrio")
 #' hg.assembly <- "hg38"
 #' vcf <- VariantAnnotation::readVcf(fp.vcf, hg.assembly)
 #' 
 #' #Get no. of rare variants that are transmitted from parents to offspring
 #' transmitted.rare.var.ct <- rvtrio::getTransmittedRareVarCounts(vcf, ped)
-#' }
+#' 
 
 ################################################################################
 

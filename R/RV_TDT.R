@@ -213,8 +213,8 @@ RV_TDT <- function(vcf, ped, filepath.RV_TDT, window.size=0, window.type = "M", 
 	    		select("pid", "famid", "fatid", "motid", "sex", "affected")
 
         pids <- data.frame(colnames(vcf), stringsAsFactors = FALSE)
-        colnames(pids) <- "pids"
-        ped <- dplyr::left_join(pids, ped, by=c("pids" ="pid"))
+        colnames(pids) <- "pid"
+        ped <- dplyr::left_join(pids, ped)
         return(ped)
 
 }

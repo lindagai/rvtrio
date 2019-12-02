@@ -40,15 +40,15 @@ results data frame containing results from RV-TDT
 `RV_TDT` returns a data frame containing the RV_TDT statistic for a VCF file. Note that `RV_TDT` only works for Linux and Mac OS X.
 }
 \examples{
-\donttest{fp.ped <- system.file("inst", "extdata", "hg38.ped.txt", package = "rvtrio")
+fp.ped <- system.file("extdata", "hg38.ped.txt", package = "rvtrio")
 ped <- read.table(fp.ped,header=TRUE)
 head(ped)
 
-fp.vcf <- system.file("inst", "extdata", "hg38.vcf", package = "rvtrio")
+fp.vcf <- system.file("extdata", "hg38.vcf", package = "rvtrio")
 hg.assembly <- "hg38"
 vcf <- VariantAnnotation::readVcf(fp.vcf, hg.assembly)
 
 RV_TDT.results <- rvtrio::RV_TDT(vcf, ped, filepath.RV_TDT = filepath.to.RV_TDT)
 RV_TDT.results <- rvtrio::RV_TDT(vcf, ped, filepath.RV_TDT, window.size=0, window.type = "M")
-}
+
 }
