@@ -37,6 +37,7 @@
 
 getTransmittedRareVarCounts <- function(vcf, ped, cutoff = 0.01){
 	
+	.checkInputFiles(vcf, ped)
 	snp.pos.df <- .getPositionsOfSnps(vcf)
 	vcf <- geno(vcf)$GT	
 	mafs <- .getMAFs(vcf)
@@ -44,6 +45,76 @@ getTransmittedRareVarCounts <- function(vcf, ped, cutoff = 0.01){
 	transmitted.rare.var.ct <- .getTransmittedRareVar(rare.var.geno, ped, snp.pos.df)
 	return(transmitted.rare.var.ct)
 	
+}
+
+################################################################################
+
+.checkInputFiles <- function(vcf, ped){
+
+        .checkVCF(vcf)
+        .checkPED(ped)
+        .checkVCFandPED(vcf, ped)
+
+}
+
+##################################
+
+.checkVCF <- function(vcf){
+        if(!is(vcf, "CollapsedVCF")) {
+                stop("VCF must be an object of class collapsedVCF")
+        }
+        else if(is(vcf, "CollapsedVCF")){
+                 vcf <- geno(vcf)$GT
+                 if(is.null(vcf))
+                         stop("VCF does not seem to contain the genotype data.")
+        }
+
+        allowed.geno.values <- c("0|0", "0|1", "1|0", "1|1")
+        genotype.entries <- unique(as.vector(vcf))
+
+        if (sum(!(genotype.entries %in% allowed.geno.values)) > 0){
+                stop("Genotype entries must be of the format `0|0`, `0|1`, `1|0`, or `1|1`. Did you remember to phase the VCF?")
+        }
+}
+
+##################################
+
+.checkPED <- function(ped){
+	
+        expected.cols.ped <- c("pid", "famid", "fatid", "motid", "sex", "affected")
+
+        if(!setequal(expected.cols.ped, colnames(ped))){
+                stop("PED must contain 6 columns named `pid`, `famid`, `fatid`, `motid`, `sex``, and `affected`. \n" ,
+                     "These correspond to the personal ID, family ID, father ID, mother ID, \n", "sex (1 for male, 0 for female), and case(1)/control(0).")
+        }
+
+        ids.kid1 <- ped$fatid != 0
+        ids.kid2 <- ped$motid != 0
+
+        if(any(ids.kid1 != ids.kid2)){
+                stop("fatid and motid must both be either zero or non-zero.")
+        }
+
+}
+
+##################################
+
+.checkVCFandPED <- function(vcf, ped){
+        n.samples.vcf <- ncol(geno(vcf)$GT)
+        n.samples.ped <- nrow(ped)
+        vcf.ids <- colnames(geno(vcf)$GT)
+
+        if(n.samples.vcf != n.samples.ped) {
+                stop("The VCF and the PED have a different number of samples.")
+        } else {
+                if(!any(vcf.ids %in% ped$pid)) {
+                        stop("The VCF has samples that are not present in the PED.")
+                }
+                if(!any(ped$pid %in% vcf.ids)) {
+                        stop("The PED has samples that are not present in the VCF.")
+                }
+        }
+
 }
 
 ################################################################################
