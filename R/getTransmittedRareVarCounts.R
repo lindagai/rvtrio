@@ -21,7 +21,7 @@
 #'
 #'
 #' @examples
-#' fp.ped <- system.file("inst", "extdata", "hg38.ped.txt", package = "rvtrio")
+#' \donttest{fp.ped <- system.file("inst", "extdata", "hg38.ped.txt", package = "rvtrio")
 #' ped <- read.table(fp.ped,header=TRUE)
 #' head(ped)
 #' 
@@ -31,6 +31,7 @@
 #' 
 #' #Get no. of rare variants that are transmitted from parents to offspring
 #' transmitted.rare.var.ct <- rvtrio::getTransmittedRareVarCounts(vcf, ped)
+#' }
 
 ################################################################################
 

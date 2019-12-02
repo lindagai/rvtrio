@@ -1,6 +1,5 @@
 context("TPED dimensions and columns are correct")
 
-#TODO: Fix these
 test_that("TPED's column names (PIDs) are correct", {
         expected.snps <-colnames(vcf.geno)
         	#Remove the "_1" or "_2" (indicates which allele) from TPED PIDs
