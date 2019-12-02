@@ -2,19 +2,18 @@
 % Please edit documentation in R/RV_TDT.R
 \name{RV_TDT}
 \alias{RV_TDT}
-\title{Calculating RV-TDT statistic for user-defined windows
-`RV_TDT()` returns a data frame containing the RV_TDT statistic for a VCF or PLINK ped file. Note that RV_TDT only works for Linux and Mac OS X.}
+\title{Calculating RV-TDT statistic for user-defined windows}
 \usage{
-RV_TDT(vcf, vcf.ped, rv.tdt.dir, window.size = 0, window.type = "M",
+RV_TDT(vcf, ped, filepath.RV_TDT, window.size = 0, window.type = "M",
   adapt = 500, alpha = 1e-05, permut = 2000, lower_cutoff = 0,
   upper_cutoff = 100, minVariants = 3, maxMissRatio = 1)
 }
 \arguments{
-\item{vcf}{vcf file}
+\item{vcf}{vcf file in 'CollapsedVCF' format}
 
-\item{vcf.ped}{data frame containing pedigree information for the VCF}
+\item{ped}{data frame containing pedigree information for the VCF}
 
-\item{rv.tdt.dir}{filepath to VCF}
+\item{filepath.RV_TDT}{filepath to RV-TDT program. Can be downloaded here: \href{https://github.com/statgenetics/rv-tdt}{https://github.com/statgenetics/rv-tdt}.}
 
 \item{window.size}{size of window in number of markers}
 
@@ -38,6 +37,18 @@ RV_TDT(vcf, vcf.ped, rv.tdt.dir, window.size = 0, window.type = "M",
 results data frame containing results from RV-TDT
 }
 \description{
-Calculating RV-TDT statistic for user-defined windows
-`RV_TDT()` returns a data frame containing the RV_TDT statistic for a VCF or PLINK ped file. Note that RV_TDT only works for Linux and Mac OS X.
+`RV_TDT` returns a data frame containing the RV_TDT statistic for a VCF file. Note that `RV_TDT` only works for Linux and Mac OS X.
+}
+\examples{
+\donttest{fp.ped <- system.file("inst", "extdata", "hg38.ped.txt", package = "rvtrio")
+ped <- read.table(fp.ped,header=TRUE)
+head(ped)
+
+fp.vcf <- system.file("inst", "extdata", "hg38.vcf", package = "rvtrio")
+hg.assembly <- "hg38"
+vcf <- VariantAnnotation::readVcf(fp.vcf, hg.assembly)
+
+RV_TDT.results <- rvtrio::RV_TDT(vcf, ped, filepath.RV_TDT = filepath.to.RV_TDT)
+RV_TDT.results <- rvtrio::RV_TDT(vcf, ped, filepath.RV_TDT, window.size=0, window.type = "M")
+}
 }

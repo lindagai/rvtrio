@@ -2,8 +2,7 @@
 % Please edit documentation in R/getTransmittedRareVarCounts.R
 \name{getTransmittedRareVarCounts}
 \alias{getTransmittedRareVarCounts}
-\title{Get counts of the numberof times each rare variants transmitted from parents to offspring in the data set
-`getTransmittedRareVarCounts()` returns a data frame containing the count of rare variants =transmitted from the parents to the affected offspring. vcf, ped, cutoff = 0.01}
+\title{Get counts of the number of times each rare variants is transmitted from parents to offspring}
 \usage{
 getTransmittedRareVarCounts(vcf, ped, cutoff = 0.01)
 }
@@ -18,6 +17,18 @@ getTransmittedRareVarCounts(vcf, ped, cutoff = 0.01)
 results data frame containing the names of the SNVs that are considered rare, the number of times the rare variant was transmitted from parents to the affected offspring in the dataset, and the genomic position of the rare SNPs.
 }
 \description{
-Get counts of the numberof times each rare variants transmitted from parents to offspring in the data set
-`getTransmittedRareVarCounts()` returns a data frame containing the count of rare variants =transmitted from the parents to the affected offspring. vcf, ped, cutoff = 0.01
+`getTransmittedRareVarCounts()` returns a data frame containing the count of rare variants transmitted from the parents to the affected offspring.
+}
+\examples{
+\donttest{fp.ped <- system.file("inst", "extdata", "hg38.ped.txt", package = "rvtrio")
+ped <- read.table(fp.ped,header=TRUE)
+head(ped)
+
+fp.vcf <- system.file("inst", "extdata", "hg38.vcf", package = "rvtrio")
+hg.assembly <- "hg38"
+vcf <- VariantAnnotation::readVcf(fp.vcf, hg.assembly)
+
+#Get no. of rare variants that are transmitted from parents to offspring
+transmitted.rare.var.ct <- rvtrio::getTransmittedRareVarCounts(vcf, ped)
+}
 }
