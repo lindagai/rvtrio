@@ -1,12 +1,12 @@
 #' Calculating RV-TDT statistic for user-defined windows
+#'
+#' `RV_TDT` returns a data frame containing the RV_TDT statistic for a VCF file. Note that `RV_TDT` only works for Linux and Mac OS X.
+#'
+#' @param vcf vcf file in 'CollapsedVCF' format
 
-#' `RV_TDT()` returns a data frame containing the RV_TDT statistic for a VCF file. Note that RV_TDT only works for Linux and Mac OS X.
+#' @param ped data frame containing pedigree information for the VCF
 
-#' @param vcf vcf file
-
-#' @param vcf. data frame containing pedigree information for the VCF
-
-#' @param filepath.RV_TDT filepath to RV-TDT program. Can be downloaded here: https://github.com/statgenetics/rv-tdt
+#' @param filepath.RV_TDT filepath to RV-TDT program. Can be downloaded here: \href{https://github.com/statgenetics/rv-tdt}{https://github.com/statgenetics/rv-tdt}.
 
 #' @param window.type type of window, either number of markers ("M") or width of kilobase interval ("K") (doesn't work yet)
 
@@ -32,24 +32,33 @@
 #' @importFrom splitstackshape cSplit
 #' @importFrom methods is
 #' @importFrom utils head read.table write.table file_test
-
+#' @importFrom SummarizedExperiment rowRanges
+#' @importFrom BiocGenerics start
 #'
 #' @export
 #'
 
 #' @examples
+#' #fp.ped <- system.file(.libPaths(), "inst", "extdata", "hg38.ped.txt", package = "rvtrio")
+#' fp.ped <- file.path(.libPaths(), "rvtrio", "inst", "extdata", "hg38.ped.txt")
+#' ped <- read.table(fp.ped,header=TRUE)
+#' head(ped)
 #' 
-# RV_TDT.results <- rvtrio::RV_TDT(vcf=vcf, vcf.ped = ped, filepath.RV_TDT = filepath.to.RV_TDT)
+#' #fp.vcf <- system.file(.libPaths(), "inst", "extdata", "hg38.vcf", package = "rvtrio")
+#' fp.vcf <- file.path(.libPaths(), "rvtrio", "inst", "extdata",  "hg38.vcf")
+#' hg.assembly <- "hg38"
+#' vcf <- VariantAnnotation::readVcf(fp.vcf, hg.assembly)
 #' 
-# RV_TDT.results <- rvtrio::RV_TDT(vcf=vcf, vcf.ped = ped, filepath.RV_TDT = filepath.to.RV_TDT, window.size=0, window.type = "M")
+#' RV_TDT.results <- rvtrio::RV_TDT(vcf, ped, filepath.RV_TDT = filepath.to.RV_TDT)
+#' RV_TDT.results <- rvtrio::RV_TDT(vcf, ped, filepath.RV_TDT, window.size=0, window.type = "M")
 
 ########################################################
 
-RV_TDT <- function(vcf, vcf.ped, filepath.RV_TDT, window.size=0, window.type = "M", adapt = 500, alpha = 0.00001, permut = 2000, lower_cutoff = 0, upper_cutoff = 100, minVariants = 3, maxMissRatio = 1){
+RV_TDT <- function(vcf, ped, filepath.RV_TDT, window.size=0, window.type = "M", adapt = 500, alpha = 0.00001, permut = 2000, lower_cutoff = 0, upper_cutoff = 100, minVariants = 3, maxMissRatio = 1){
 
         curr.wd <- getwd()
 
-        .intializeEnv(vcf, vcf.ped, filepath.RV_TDT)
+        .intializeEnv(vcf, ped, filepath.RV_TDT)
 
         parameters <- c(adapt, alpha, permut,lower_cutoff,
                         upper_cutoff, minVariants, maxMissRatio)
@@ -77,9 +86,9 @@ RV_TDT <- function(vcf, vcf.ped, filepath.RV_TDT, window.size=0, window.type = "
 ########################################################
 
 
-.intializeEnv <- function(vcf, vcf.ped, filepath.RV_TDT) {
+.intializeEnv <- function(vcf, ped, filepath.RV_TDT) {
 
-	    .checkInputs(vcf, vcf.ped, filepath.RV_TDT)
+	    .checkInputs(vcf, ped, filepath.RV_TDT)
         rvtrio.dir <- file.path(.libPaths(),"rvtrio")
         setwd(rvtrio.dir)
         data.dir <-"./data"
@@ -93,11 +102,11 @@ RV_TDT <- function(vcf, vcf.ped, filepath.RV_TDT, window.size=0, window.type = "
 
 ########################################################
 
-.checkInputs <- function(vcf, vcf.ped, filepath.RV_TDT){
+.checkInputs <- function(vcf, ped, filepath.RV_TDT){
 
         .checkVCF(vcf)
-        .checkPED(vcf.ped)
-        .checkVCFandPED(vcf, vcf.ped)
+        .checkPED(ped)
+        .checkVCFandPED(vcf, ped)
         .checkFilepathToRV_TDT(filepath.RV_TDT)
 
 }
@@ -176,8 +185,8 @@ RV_TDT <- function(vcf, vcf.ped, filepath.RV_TDT, window.size=0, window.type = "
 .getSnpPosDF<- function(vcf) {
 
         snp.pos.df <- data.frame(cbind(names(vcf),
-                                          start(
-                                                  rowRanges(vcf)
+                                          BiocGenerics::start(
+                                                  SummarizedExperiment::rowRanges(vcf)
                                                   )
                                           )
                                     )
@@ -231,7 +240,7 @@ RV_TDT <- function(vcf, vcf.ped, filepath.RV_TDT, window.size=0, window.type = "
 .restoreEnv <- function(curr.wd){
 
        .deletePED()
-       # .deleteInputDir()
+       .deleteInputDir()
        .deleteResultsDir()
         setwd(curr.wd)
 

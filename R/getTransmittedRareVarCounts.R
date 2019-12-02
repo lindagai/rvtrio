@@ -1,22 +1,36 @@
-#' Get counts of the numberof times each rare variants transmitted from parents to offspring in the data set
-
-#' `getTransmittedRareVarCounts()` returns a data frame containing the count of rare variants =transmitted from the parents to the affected offspring. vcf, ped, cutoff = 0.01
-
+#' Get counts of the number of times each rare variants is transmitted from parents to offspring
+#'
+#' `getTransmittedRareVarCounts()` returns a data frame containing the count of rare variants transmitted from the parents to the affected offspring.
+#'
 #' @param vcf vcf file
-
+#'
 #' @param ped data frame containing pedigree information for the VCF
-
+#'
 #' @param cutoff The MAF cutoff to determine which variants are "rare" (default is 0.01), for which transmission counts will calculated.  
-
+#'
 #' @return results data frame containing the names of the SNVs that are considered rare, the number of times the rare variant was transmitted from parents to the affected offspring in the dataset, and the genomic position of the rare SNPs.
-
+#'
 #' @import dplyr VariantAnnotation
 #' @importFrom methods is
 #' @importFrom utils head read.table write.table type.convert 
-
+#' @importFrom SummarizedExperiment rowRanges
+#' @importFrom BiocGenerics start
+#'
 #'
 #' @export
 #'
+#'
+#' @examples
+#' fp.ped <- system.file("inst", "extdata", "hg38.ped.txt", package = "rvtrio")
+#' ped <- read.table(fp.ped,header=TRUE)
+#' head(ped)
+#' 
+#' fp.vcf <- system.file("inst", "extdata", "hg38.vcf", package = "rvtrio")
+#' hg.assembly <- "hg38"
+#' vcf <- VariantAnnotation::readVcf(fp.vcf, hg.assembly)
+#' 
+#' #Get no. of rare variants that are transmitted from parents to offspring
+#' transmitted.rare.var.ct <- rvtrio::getTransmittedRareVarCounts(vcf, ped)
 
 ################################################################################
 
@@ -160,7 +174,7 @@ getTransmittedRareVarCounts <- function(vcf, ped, cutoff = 0.01){
         
         #Add SNP name and position to DF of results
         snp <- names(vcf)
-        pos <- start(rowRanges(vcf))
+        pos <- BiocGenerics::start(rowRanges(vcf))
         snp.pos.df <- data.frame(snp, pos, stringsAsFactors = FALSE)
         return(snp.pos.df)
         
