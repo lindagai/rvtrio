@@ -1,0 +1,80 @@
+Possible extensions to the rvtrio, in order of estimated difficulty:
+
+######################################################
+
+1.  Add additional unit tests
+
+######################################################
+
+Note that you'll have to use devtools::test() while the working in the rvtrio package directory to get the unit tests to work. devtools::check() cannot find the tests.
+
+######################################################
+
+2. Add a function that will automatically create windows 
+of all markers in a n-kB interval (e.g. 1000 kB), instead of number of markers
+
+######################################################
+ 
+This would be extremely helpful/useful.
+
+######################################################
+
+3.  Improve speed/quality of implementations of wrapper functions
+
+######################################################
+
+(A) Benchmark performance of each method using a very small example dataset (e.g. 10 SNPs?)
+
+(B) Look for improvements in function code
+* Code style — is the code “human-readable”? Is it in tidyverse style? etc.
+* Code speed -- are there more efficient implementations?
+
+######################################################
+
+4. Add wrapper functions for other rare variant tests
+
+######################################################
+
+There are 2 additional rare variant tests that could be included in rvtrio:
+
+#######################
+
+(1) Scan-Trio
+
+#######################
+
+Code for doing this can be found here:
+https://github.com/lindagai/8q24_project/tree/master/code2/2_methods/ScanTrio
+
+Paper references here:
+
+
+You will probably need to rewrite this code to use VCF files, instead of
+BEAGLE v3 files that are then converting it back to VCF.
+
+#######################
+
+(2) rvTDT
+
+#######################
+
+Code for doing this can be found here:
+https://github.com/lindagai/8q24_project/tree/master/code2/2_methods/rvTDT
+
+This is already an R package on CRAN, but you could:
+
+1. write wrapper functions that automatically prepare input files from
+VCF format
+
+2. add to the workflow a way to (reproducible) way to obtain the annotation information required for this method
+
+######################################################
+
+5. Comparison of performance of methods
+
+######################################################
+
+1. Add additional rare variant analysis methods to the workflow
+(e.g. rvTDT, Scan-Trio)
+
+2. Simulate data and compare results using different rare variant analysis methods (rvTDT, Scan-Trio, and RV-TDT)
