@@ -239,7 +239,8 @@ RV_TDT <- function(vcf, ped, filepath.RV_TDT, window.size=0, window.type = "M", 
 .restoreEnv <- function(curr.wd){
 
        .deletePED()
-       .deleteInputDir()
+       # Commented out the below line because it can cause problems
+       # .deleteInputDir()
        .deleteResultsDir()
         setwd(curr.wd)
 
